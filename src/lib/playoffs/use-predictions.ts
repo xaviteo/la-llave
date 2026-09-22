@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PredictionMap, ScorePrediction } from "./types";
 
-const KEY = "lallave-pred-v1";
+const KEY = "lallave-pred-v2";
 
 function readStored(): PredictionMap {
   try {
@@ -34,8 +34,10 @@ export function usePredictions() {
     (id: string, next: ScorePrediction | null) => {
       setPredictions((prev) => {
         const copy = { ...prev };
-        if (!next) delete copy[id];
-        else copy[id] = { home: clamp(next.home), away: clamp(next.away) };
+        const home = next ? clamp(next.home) : null;
+        const away = next ? clamp(next.away) : null;
+        if (!next || (home === null && away === null)) delete copy[id];
+        else copy[id] = { home, away };
         try {
           localStorage.setItem(KEY, JSON.stringify(copy));
         } catch {
@@ -49,11 +51,13 @@ export function usePredictions() {
 
   const clear = useCallback(() => persist({}), [persist]);
 
-  const filled = Object.keys(predictions).length;
+  const filled = Object.values(predictions).filter(
+    (score) => score.home !== null && score.away !== null,
+  ).length;
   return { predictions, setScore, clear, filled };
 }
 
-function clamp(n: number): number {
-  if (!Number.isFinite(n)) return 0;
+function clamp(n: number | null): number | null {
+  if (n === null || !Number.isFinite(n)) return null;
   return Math.max(0, Math.min(9, Math.round(n)));
 }

@@ -325,7 +325,7 @@ export function applyPredictedResults(
   for (const match of remaining) {
     if (match.state !== "pre") continue;
     const pred = predictions[match.id];
-    if (!pred) continue;
+    if (!pred || pred.home === null || pred.away === null) continue;
     const home = findTeam(next, match.homeId);
     const away = findTeam(next, match.awayId);
     if (!home || !away) continue;
@@ -339,9 +339,10 @@ export function snapshotWithPredictions(
   snapshot: PlayoffSnapshot,
   predictions: PredictionMap,
 ): PlayoffSnapshot {
-  const count = snapshot.remaining.filter(
-    (match) => match.state === "pre" && predictions[match.id],
-  ).length;
+  const count = snapshot.remaining.filter((match) => {
+    const pred = predictions[match.id];
+    return match.state === "pre" && pred?.home != null && pred.away != null;
+  }).length;
   if (count === 0) return snapshot;
   const zones = applyPredictedResults(snapshot.zones, snapshot.remaining, predictions);
   return {

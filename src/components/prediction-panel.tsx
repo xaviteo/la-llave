@@ -16,7 +16,7 @@ export function PredictionPanel({
 }: {
   data: PlayoffSnapshot;
   predictions: PredictionMap;
-  onScore: (id: string, home: number, away: number) => void;
+  onScore: (id: string, home: number | null, away: number | null) => void;
   onClear: () => void;
   onClearMatch: (id: string) => void;
 }) {
@@ -32,7 +32,9 @@ export function PredictionPanel({
 
   const firstOpen = grouped[0]?.[0] ?? 10;
   const [open, setOpen] = useState<number>(firstOpen);
-  const filled = Object.keys(predictions).length;
+  const filled = Object.values(predictions).filter(
+    (score) => score.home !== null && score.away !== null,
+  ).length;
 
   if (grouped.length === 0) {
     return (
@@ -59,7 +61,10 @@ export function PredictionPanel({
       </div>
       <div className="flex flex-col gap-2">
         {grouped.map(([round, matches]) => {
-          const done = matches.filter((match) => predictions[match.id]).length;
+          const done = matches.filter((match) => {
+            const score = predictions[match.id];
+            return score?.home != null && score.away != null;
+          }).length;
           const isOpen = open === round;
           return (
             <div key={round} className="overflow-hidden rounded-lg bg-bg">
@@ -106,8 +111,8 @@ function PredictionRow({
 }: {
   data: PlayoffSnapshot;
   match: RemainingMatch;
-  prediction?: { home: number; away: number };
-  onScore: (id: string, home: number, away: number) => void;
+  prediction?: { home: number | null; away: number | null };
+  onScore: (id: string, home: number | null, away: number | null) => void;
   onClearMatch: (id: string) => void;
 }) {
   const home = teamById(data, match.homeId);
@@ -129,15 +134,15 @@ function PredictionRow({
       ) : (
         <span className="flex items-center gap-1">
           <ScoreInput
-            value={prediction?.home}
+            value={prediction?.home ?? null}
             ariaLabel={`Goles ${home?.short ?? "local"}`}
-            onChange={(homeScore) => onScore(match.id, homeScore, prediction?.away ?? 0)}
+            onChange={(homeScore) => onScore(match.id, homeScore, prediction?.away ?? null)}
           />
           <span className="text-faint">–</span>
           <ScoreInput
-            value={prediction?.away}
+            value={prediction?.away ?? null}
             ariaLabel={`Goles ${away?.short ?? "visita"}`}
-            onChange={(awayScore) => onScore(match.id, prediction?.home ?? 0, awayScore)}
+            onChange={(awayScore) => onScore(match.id, prediction?.home ?? null, awayScore)}
           />
         </span>
       )}
@@ -166,24 +171,19 @@ function ScoreInput({
   onChange,
   ariaLabel,
 }: {
-  value: number | undefined;
-  onChange: (n: number) => void;
+  value: number | null;
+  onChange: (n: number | null) => void;
   ariaLabel: string;
 }) {
   return (
     <input
       aria-label={ariaLabel}
       inputMode="numeric"
-      pattern="[0-9]"
-      maxLength={1}
-      value={value === undefined ? "" : String(value)}
+      value={value === null ? "" : String(value)}
+      onFocus={(event) => event.currentTarget.select()}
       onChange={(event) => {
-        const raw = event.target.value.replace(/\D/g, "").slice(-1);
-        if (raw === "") {
-          onChange(0);
-          return;
-        }
-        onChange(Number(raw));
+        const digits = event.target.value.replace(/\D/g, "");
+        onChange(digits === "" ? null : Number(digits.slice(-1)));
       }}
       className={cn(
         "h-11 w-10 rounded-md bg-surface text-center font-display text-lg tabular-nums text-fg shadow-[0_0_0_1px_rgba(238,242,244,0.12)] outline-none sm:w-11",

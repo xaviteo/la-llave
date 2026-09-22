@@ -44,7 +44,7 @@ export type MatchRow = {
 
 export type RemainingMatch = MatchRow & { round: number; label: string };
 
-export type ScorePrediction = { home: number; away: number };
+export type ScorePrediction = { home: number | null; away: number | null };
 export type PredictionMap = Record<string, ScorePrediction>;
 
 export type BracketSide = {

@@ -1,0 +1,11 @@
+node_modules
+.git
+.grok
+.output
+dist
+screenshots
+artifacts
+*.log
+.env
+.env.*
+!.env.example

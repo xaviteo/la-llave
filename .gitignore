@@ -15,3 +15,4 @@ artifacts/
 .grok/skills/
 .grok/references/
 .grok/og-pending
+.grok/app-env.json

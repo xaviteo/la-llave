@@ -9,7 +9,7 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 COPY . .
 RUN npm run build

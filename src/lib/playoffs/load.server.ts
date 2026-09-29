@@ -1,5 +1,7 @@
+import { selectFecha } from "./current-fecha";
 import { artDayKey } from "./format";
 import { FALLBACK_MATCHES, FALLBACK_STANDINGS, FALLBACK_TOURNAMENT } from "./fallback";
+import { fixtureRound } from "./fixture";
 import { attachRemaining, buildSnapshot, toMatchRow, type RawMatch, type RawStanding } from "./logic";
 import type { MatchRow, MatchState, PlayoffSnapshot, ZoneId } from "./types";
 
@@ -197,7 +199,7 @@ function calendarYmds(payload: unknown, today: string): string[] {
   for (const entry of calendar) {
     if (typeof entry !== "string" || entry.length < 10) continue;
     const ymd = entry.slice(0, 10).replaceAll("-", "");
-    if (/^\d{8}$/.test(ymd) && ymd >= today) dates.push(ymd);
+    if (/^\d{8}$/.test(ymd) && ymd >= shiftYmd(today, -10)) dates.push(ymd);
   }
   return [...new Set(dates)];
 }
@@ -287,10 +289,19 @@ function attachAgenda(
   slate: RawMatch[],
   today: string,
 ): PlayoffSnapshot {
+  const selected = selectFecha(agendaFrom(slate, today));
   return {
     ...attachRemaining(snapshot, slate),
-    agenda: agendaFrom(slate, today),
+    agenda: selected.matches,
+    agendaRound: selected.round,
   };
+}
+
+function shiftYmd(ymd: string, days: number): string {
+  const date = new Date(Date.UTC(Number(ymd.slice(0, 4)), Number(ymd.slice(4, 6)) - 1, Number(ymd.slice(6, 8)) + days));
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${date.getUTCFullYear()}${month}${day}`;
 }
 
 function agendaFrom(matches: RawMatch[], today: string): MatchRow[] {
@@ -299,10 +310,12 @@ function agendaFrom(matches: RawMatch[], today: string): MatchRow[] {
   for (const match of matches) {
     if (!match.id || !match.date || seen.has(match.id)) continue;
     const key = artDayKey(match.date);
-    if (!key) continue;
-    if (key < today && match.state !== "in") continue;
+    if (!key || key < shiftYmd(today, -10)) continue;
     seen.add(match.id);
-    rows.push(toMatchRow(match));
+    const row = toMatchRow(match);
+    const round = fixtureRound(match.homeId, match.awayId);
+    if (round != null) row.round = round;
+    rows.push(row);
   }
   rows.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
   return rows;

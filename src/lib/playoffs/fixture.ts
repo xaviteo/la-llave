@@ -43,6 +43,17 @@ export function fixtureId(game: FixtureGame): string {
   return `r${game.round}-${game.homeId}-${game.awayId}`;
 }
 
+const ROUND_BY_PAIR = new Map<string, number>();
+
+export function fixtureRound(homeId: string, awayId: string): number | null {
+  if (ROUND_BY_PAIR.size === 0) {
+    for (const game of REMAINING_FIXTURE) {
+      ROUND_BY_PAIR.set(`${game.homeId}-${game.awayId}`, game.round);
+    }
+  }
+  return ROUND_BY_PAIR.get(`${homeId}-${awayId}`) ?? null;
+}
+
 export const ROUND_LABELS: Record<number, string> = {
   10: "Fecha 10 · resto",
   11: "Fecha 11 · 2 al 4 de oct",

@@ -266,6 +266,7 @@ export function buildSnapshot(input: {
     zones,
     matches: projected.matches.sort((a, b) => a.date.localeCompare(b.date)),
     agenda: [],
+    agendaRound: null,
     octavos,
     remaining: [],
     cuartos: [

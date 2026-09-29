@@ -26,15 +26,13 @@ export function MatchStrip({
 
   if (groups.length === 0) return null;
 
-  const total = data.agenda.length;
-
   return (
     <section className="min-w-0">
       <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-lg tracking-wide text-fg">Próximos partidos</h2>
-        <p className="text-xs text-muted">
-          {total} partido{total === 1 ? "" : "s"} · hora argentina
-        </p>
+        <h2 className="font-display text-lg tracking-wide text-fg">
+          {data.agendaRound ? `Fecha ${data.agendaRound}` : "Esta fecha"}
+        </h2>
+        <p className="text-xs text-muted">Hora argentina</p>
       </div>
       <div className="panel rounded-xl bg-surface px-1.5 py-1.5 sm:px-2">
         {groups.map((group) => (

@@ -1,6 +1,7 @@
+import { artDayKey } from "./format";
 import { FALLBACK_MATCHES, FALLBACK_STANDINGS, FALLBACK_TOURNAMENT } from "./fallback";
-import { buildSnapshot, type RawMatch, type RawStanding } from "./logic";
-import type { MatchState, PlayoffSnapshot, ZoneId } from "./types";
+import { attachRemaining, buildSnapshot, toMatchRow, type RawMatch, type RawStanding } from "./logic";
+import type { MatchRow, MatchState, PlayoffSnapshot, ZoneId } from "./types";
 
 const STANDINGS_URLS = [
   "https://site.web.api.espn.com/apis/v2/sports/soccer/arg.1/standings",
@@ -21,6 +22,13 @@ type CacheEntry = { at: number; data: PlayoffSnapshot };
 let cache: CacheEntry | null = null;
 let lastGood: PlayoffSnapshot | null = null;
 const TTL_MS = 15_000;
+
+type ScheduleCache = { at: number; matches: RawMatch[] };
+let scheduleCache: ScheduleCache | null = null;
+let scheduleInflight: Promise<RawMatch[]> | null = null;
+/** Kickoff times barely move, so the full slate is not refetched with the live score. */
+const SCHEDULE_TTL_MS = 15 * 60 * 1000;
+const SCHEDULE_CONCURRENCY = 4;
 
 function num(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -172,12 +180,132 @@ function ymdArt(offsetDays = 0): string {
 }
 
 function fallbackSnapshot(): PlayoffSnapshot {
-  return buildSnapshot({
+  const snapshot = buildSnapshot({
     tournament: FALLBACK_TOURNAMENT,
     rawStandings: FALLBACK_STANDINGS,
     rawMatches: FALLBACK_MATCHES,
     source: "fallback",
   });
+  return { ...snapshot, agenda: snapshot.matches };
+}
+
+function calendarYmds(payload: unknown, today: string): string[] {
+  const leagues = (payload as { leagues?: Array<{ calendar?: unknown }> }).leagues;
+  const calendar = leagues?.[0]?.calendar;
+  if (!Array.isArray(calendar)) return [];
+  const dates: string[] = [];
+  for (const entry of calendar) {
+    if (typeof entry !== "string" || entry.length < 10) continue;
+    const ymd = entry.slice(0, 10).replaceAll("-", "");
+    if (/^\d{8}$/.test(ymd) && ymd >= today) dates.push(ymd);
+  }
+  return [...new Set(dates)];
+}
+
+async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      out[index] = await fn(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+async function scoreboardOn(ymd: string): Promise<RawMatch[]> {
+  const urls = SCOREBOARD_URLS.map((base) => `${base}?dates=${ymd}`);
+  const json = await fetchFirst(urls);
+  return parseScoreboard(json).matches;
+}
+
+async function refreshSchedule(dates: string[]): Promise<RawMatch[]> {
+  if (dates.length === 0) return scheduleCache?.matches ?? [];
+  const batches = await mapPool(dates, SCHEDULE_CONCURRENCY, async (ymd) => {
+    try {
+      return await scoreboardOn(ymd);
+    } catch {
+      return [] as RawMatch[];
+    }
+  });
+  const matches: RawMatch[] = [];
+  const seen = new Set<string>();
+  for (const batch of batches) {
+    for (const match of batch) {
+      if (!match.id || seen.has(match.id)) continue;
+      seen.add(match.id);
+      matches.push(match);
+    }
+  }
+  if (matches.length === 0 && scheduleCache) {
+    scheduleCache = { at: Date.now(), matches: scheduleCache.matches };
+    return scheduleCache.matches;
+  }
+  scheduleCache = { at: Date.now(), matches };
+  return matches;
+}
+
+function loadSchedule(dates: string[]): Promise<RawMatch[]> {
+  const now = Date.now();
+  if (scheduleCache && now - scheduleCache.at < SCHEDULE_TTL_MS) {
+    return Promise.resolve(scheduleCache.matches);
+  }
+  if (scheduleCache) {
+    if (!scheduleInflight) {
+      scheduleInflight = refreshSchedule(dates).finally(() => {
+        scheduleInflight = null;
+      });
+    }
+    return Promise.resolve(scheduleCache.matches);
+  }
+  if (!scheduleInflight) {
+    scheduleInflight = refreshSchedule(dates).finally(() => {
+      scheduleInflight = null;
+    });
+  }
+  return scheduleInflight;
+}
+
+function overlayFresh(schedule: RawMatch[], fresh: RawMatch[]): RawMatch[] {
+  const byId = new Map<string, RawMatch>();
+  for (const match of schedule) {
+    if (match.id) byId.set(match.id, match);
+  }
+  for (const match of fresh) {
+    if (!match.id) continue;
+    const prev = byId.get(match.id);
+    byId.set(match.id, prev ? { ...prev, ...match } : match);
+  }
+  return [...byId.values()];
+}
+
+function attachAgenda(
+  snapshot: PlayoffSnapshot,
+  slate: RawMatch[],
+  today: string,
+): PlayoffSnapshot {
+  return {
+    ...attachRemaining(snapshot, slate),
+    agenda: agendaFrom(slate, today),
+  };
+}
+
+function agendaFrom(matches: RawMatch[], today: string): MatchRow[] {
+  const rows: MatchRow[] = [];
+  const seen = new Set<string>();
+  for (const match of matches) {
+    if (!match.id || !match.date || seen.has(match.id)) continue;
+    const key = artDayKey(match.date);
+    if (!key) continue;
+    if (key < today && match.state !== "in") continue;
+    seen.add(match.id);
+    rows.push(toMatchRow(match));
+  }
+  rows.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+  return rows;
 }
 
 export async function loadSnapshot(): Promise<PlayoffSnapshot> {
@@ -198,15 +326,19 @@ export async function loadSnapshot(): Promise<PlayoffSnapshot> {
     for (const match of extra) {
       if (!byId.has(match.id)) scoreboard.matches.push(match);
     }
+    const today = ymdArt(0);
+    const scheduled = await loadSchedule(calendarYmds(scoreboardJson, today));
+    const slate = overlayFresh(scheduled, scoreboard.matches);
     const snapshot = buildSnapshot({
       tournament: scoreboard.tournament || standings.tournament,
       rawStandings: standings.rows,
       rawMatches: scoreboard.matches,
       source: "espn",
     });
-    cache = { at: now, data: snapshot };
-    lastGood = snapshot;
-    return snapshot;
+    const withAgenda = attachAgenda(snapshot, slate, today);
+    cache = { at: now, data: withAgenda };
+    lastGood = withAgenda;
+    return withAgenda;
   } catch {
     if (lastGood) return lastGood;
     const snapshot = fallbackSnapshot();

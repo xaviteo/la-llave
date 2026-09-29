@@ -10,7 +10,7 @@ export function Segmented<T extends string>({
   options: Array<{ value: T; label: string }>;
 }) {
   return (
-    <div className="inline-flex rounded-lg bg-surface-2 p-1 shadow-[0_0_0_1px_rgba(238,242,244,0.08)]">
+    <div className="panel inline-flex rounded-lg bg-surface-2 p-1">
       {options.map((option) => {
         const active = option.value === value;
         return (

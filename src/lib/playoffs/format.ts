@@ -6,8 +6,29 @@ function artDate(iso: string): Date {
   return new Date(new Date(iso).getTime() - ART_OFFSET_MS);
 }
 
+const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;
+const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"] as const;
+
 function hhmm(date: Date): string {
   return `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+}
+
+export function artDayKey(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return "";
+  const date = artDate(iso);
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${date.getUTCFullYear()}${month}${day}`;
+}
+
+export function formatDayHeading(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return "";
+  const date = artDate(iso);
+  const weekday = WEEKDAYS[date.getUTCDay()] ?? "";
+  const label = `${weekday} ${date.getUTCDate()} ${MONTHS[date.getUTCMonth()] ?? ""}`;
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export function formatClock(match: MatchRow): string {

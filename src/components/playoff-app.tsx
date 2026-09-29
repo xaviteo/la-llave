@@ -6,6 +6,7 @@ import { BracketTree } from "@/components/bracket-tree";
 import { HowItWorks } from "@/components/how-it-works";
 import { MatchStrip } from "@/components/match-strip";
 import { PredictionPanel } from "@/components/prediction-panel";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { ZoneTables } from "@/components/zone-table";
@@ -56,6 +57,7 @@ export function PlayoffApp({ initial }: { initial: PlayoffSnapshot }) {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {live.live ? (
               <span className="inline-flex h-11 items-center gap-2 rounded-full bg-live/15 px-3 text-xs font-semibold uppercase tracking-wide text-live">
                 <Radio className="live-dot size-3.5" />
@@ -157,13 +159,16 @@ export function PlayoffApp({ initial }: { initial: PlayoffSnapshot }) {
           predicted={showingPrediction}
         />
         <HowItWorks />
-        <p className="text-center text-xs text-faint">
-          Actualizado {relativeUpdated(live.updatedAt)}
-          {live.source === "fallback" ? " · última tabla conocida" : " · datos ESPN"}
-          {live.projected && !showingPrediction ? " · incluye marcador en curso" : ""}
-          {showingPrediction ? " · tablas según tu predicción" : ""}
-          . Tocá un club para seguirlo en la llave y en la tabla.
-        </p>
+        <footer className="flex flex-col items-center gap-1 text-center text-xs text-faint">
+          <p>
+            Actualizado {relativeUpdated(live.updatedAt)}
+            {live.source === "fallback" ? " · última tabla conocida" : ""}
+            {live.projected && !showingPrediction ? " · incluye marcador en curso" : ""}
+            {showingPrediction ? " · tablas según tu predicción" : ""}
+            . Tocá un club para seguirlo en la llave y en la tabla.
+          </p>
+          <p>Desarrollado por el pirata JJCAB.</p>
+        </footer>
       </main>
     </div>
   );

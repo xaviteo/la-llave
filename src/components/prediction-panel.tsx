@@ -38,14 +38,14 @@ export function PredictionPanel({
 
   if (grouped.length === 0) {
     return (
-      <section className="rounded-xl bg-surface p-4 text-sm text-muted shadow-[0_0_0_1px_rgba(238,242,244,0.08)]">
+      <section className="panel rounded-xl bg-surface p-4 text-sm text-muted">
         No quedan partidos por jugar en la fase de zonas.
       </section>
     );
   }
 
   return (
-    <section className="rounded-xl bg-surface p-3 shadow-[0_0_0_1px_rgba(238,242,244,0.08)] sm:p-4">
+    <section className="panel rounded-xl bg-surface p-3 sm:p-4">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="font-display text-xl tracking-wide">Predicción</h2>
@@ -186,8 +186,8 @@ function ScoreInput({
         onChange(digits === "" ? null : Number(digits.slice(-1)));
       }}
       className={cn(
-        "h-11 w-10 rounded-md bg-surface text-center font-display text-lg tabular-nums text-fg shadow-[0_0_0_1px_rgba(238,242,244,0.12)] outline-none sm:w-11",
-        "focus-visible:shadow-[0_0_0_2px_rgba(126,182,212,0.7)]",
+        "h-11 w-10 rounded-md border border-border bg-surface text-center font-display text-lg tabular-nums text-fg outline-none sm:w-11",
+        "focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/70",
       )}
     />
   );

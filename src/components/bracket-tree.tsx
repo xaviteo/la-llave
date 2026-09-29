@@ -170,9 +170,8 @@ function OctavosNode({
   return (
     <article
       className={cn(
-        "w-52 rounded-md bg-surface p-1.5 shadow-[0_0_0_1px_rgba(238,242,244,0.08)]",
-        active && "shadow-[0_0_0_1px_rgba(126,182,212,0.7)]",
-        changed && "shadow-[0_0_0_1px_rgba(126,182,212,0.55)]",
+        "panel w-52 rounded-md bg-surface p-1.5",
+        (active || changed) && "panel-accent",
       )}
     >
       <p className="flex items-center justify-between gap-1 px-1 text-[10px] uppercase tracking-widest text-faint">
@@ -230,9 +229,8 @@ function LaterNode({
   return (
     <article
       className={cn(
-        "flex w-40 flex-col justify-center rounded-md bg-surface px-3 py-2 shadow-[0_0_0_1px_rgba(238,242,244,0.08)]",
-        active && "shadow-[0_0_0_1px_rgba(126,182,212,0.7)]",
-        changed && "shadow-[0_0_0_1px_rgba(126,182,212,0.55)]",
+        "panel flex w-40 flex-col justify-center rounded-md bg-surface px-3 py-2",
+        (active || changed) && "panel-accent",
       )}
     >
       <p className="font-display text-xs tracking-wider text-muted">{title}</p>

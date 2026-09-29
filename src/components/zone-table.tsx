@@ -56,7 +56,7 @@ function ZoneTable({
   predicted?: boolean;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl bg-surface shadow-[0_0_0_1px_rgba(238,242,244,0.08)]">
+    <div className="panel overflow-hidden rounded-xl bg-surface">
       <div className="flex items-baseline justify-between px-4 py-3">
         <h2 className="font-display text-xl tracking-wide">Zona {zone}</h2>
         <p className="text-[11px] uppercase tracking-widest text-muted">Clasifican 1° a 8°</p>

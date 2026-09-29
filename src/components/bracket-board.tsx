@@ -86,7 +86,7 @@ function LlaveColumn({
   changedIds?: Set<string>;
 }) {
   return (
-    <div className="rounded-xl bg-surface p-3 shadow-[0_0_0_1px_rgba(238,242,244,0.08)] sm:p-4">
+    <div className="panel rounded-xl bg-surface p-3 sm:p-4">
       <div className="mb-3">
         <h3 className="font-display text-xl tracking-wide">{title}</h3>
         <p className="text-xs text-muted">{caption}</p>
@@ -135,8 +135,8 @@ function MatchCard({
   return (
     <article
       className={cn(
-        "rounded-lg bg-bg p-2.5 shadow-[0_0_0_1px_rgba(238,242,244,0.08)]",
-        changed && "shadow-[0_0_0_1px_rgba(126,182,212,0.55)]",
+        "panel rounded-lg bg-bg p-2.5",
+        changed && "panel-accent",
       )}
     >
       <div className="mb-2 flex items-center justify-between gap-2 px-1">

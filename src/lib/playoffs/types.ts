@@ -72,6 +72,8 @@ export type PlayoffSnapshot = {
   projected: boolean;
   zones: { A: StandingRow[]; B: StandingRow[] };
   matches: MatchRow[];
+  /** Upcoming and same-day matches, with kickoff, newest slate included. */
+  agenda: MatchRow[];
   octavos: KnockoutMatch[];
   remaining: RemainingMatch[];
   cuartos: { id: string; label: string; a: string; b: string }[];

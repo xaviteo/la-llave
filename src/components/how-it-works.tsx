@@ -1,6 +1,6 @@
 export function HowItWorks() {
   return (
-    <section className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_rgba(238,242,244,0.08)] sm:p-5">
+    <section className="panel rounded-xl bg-surface p-4 sm:p-5">
       <h2 className="font-display text-xl tracking-wide">Cómo se cruzan</h2>
       <div className="mt-3 grid gap-4 text-sm leading-relaxed text-muted md:grid-cols-3">
         <div>

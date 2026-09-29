@@ -6,9 +6,9 @@ export function TeamMark({
   size = "md",
 }: {
   team: Pick<StandingRow, "short" | "logo" | "name" | "abbr"> | null;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
 }) {
-  const dim = size === "sm" ? "size-6" : "size-8";
+  const dim = size === "xs" ? "size-4" : size === "sm" ? "size-6" : "size-8";
   if (!team) {
     return (
       <span

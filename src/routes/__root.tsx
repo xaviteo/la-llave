@@ -17,7 +17,6 @@ export const Route = createRootRoute({
         content:
           "Cruces de playoffs de la Liga Profesional en vivo: octavos, localía y tablas de las zonas A y B.",
       },
-      { name: "theme-color", content: "#0c1014" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -35,6 +34,12 @@ export const Route = createRootRoute({
   component: () => (
     <html lang="es" className="antialiased" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){try{var t=localStorage.getItem("lallave-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;var m=document.querySelector("meta[name=\\"theme-color\\"]");if(!m){m=document.createElement("meta");m.name="theme-color";document.head.appendChild(m);}m.setAttribute("content",t==="light"?"#f3f6f8":"#0c1014");}catch(e){}})();',
+          }}
+        />
         <HeadContent />
       </head>
       <body className="bg-bg text-fg">

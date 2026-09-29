@@ -1,6 +1,7 @@
-import { formatClock, teamById } from "@/lib/playoffs/format";
-import type { PlayoffSnapshot } from "@/lib/playoffs/types";
+import { useMemo } from "react";
 import { TeamMark } from "@/components/team-mark";
+import { artDayKey, formatClock, formatDayHeading, teamById } from "@/lib/playoffs/format";
+import type { MatchRow, PlayoffSnapshot } from "@/lib/playoffs/types";
 import { cn } from "@/lib/utils";
 
 export function MatchStrip({
@@ -12,64 +13,107 @@ export function MatchStrip({
   focusId: string | null;
   onFocus: (id: string) => void;
 }) {
-  if (data.matches.length === 0) return null;
+  const groups = useMemo(() => {
+    const map = new Map<string, { key: string; label: string; matches: MatchRow[] }>();
+    for (const match of data.agenda) {
+      const key = artDayKey(match.date) || match.id;
+      const group = map.get(key) ?? { key, label: formatDayHeading(match.date), matches: [] };
+      group.matches.push(match);
+      map.set(key, group);
+    }
+    return [...map.values()];
+  }, [data.agenda]);
+
+  if (groups.length === 0) return null;
+
+  const total = data.agenda.length;
 
   return (
     <section className="min-w-0">
       <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-lg tracking-wide text-fg">Esta fecha</h2>
+        <h2 className="font-display text-lg tracking-wide text-fg">Próximos partidos</h2>
         <p className="text-xs text-muted">
-          {data.projected ? "El marcador en curso ya mueve los cruces" : "Al jugarse, actualizan la llave"}
+          {total} partido{total === 1 ? "" : "s"} · hora argentina
         </p>
       </div>
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
-        {data.matches.map((match) => {
-          const home = teamById(data, match.homeId);
-          const away = teamById(data, match.awayId);
-          const live = match.state === "in";
-          const active = focusId && (focusId === match.homeId || focusId === match.awayId);
-          const showScore = match.state !== "pre";
-          return (
-            <button
-              key={match.id}
-              type="button"
-              onClick={() => onFocus(home?.id ?? away?.id ?? "")}
-              className={cn(
-                "flex min-h-11 min-w-[17.5rem] shrink-0 items-center gap-2 rounded-lg bg-surface px-3 py-2 text-left shadow-[0_0_0_1px_rgba(238,242,244,0.08)] transition-[box-shadow,background-color] duration-150",
-                live && "shadow-[0_0_0_1px_rgba(224,91,91,0.45)]",
-                active && "bg-surface-2",
-              )}
-            >
-              <span
-                className={cn(
-                  "w-[3.25rem] shrink-0 text-[10px] font-semibold uppercase tracking-wide text-muted",
-                  live && "text-live",
-                )}
-              >
-                {live ? (
-                  <span className="inline-flex items-center gap-1">
-                    <span className="live-dot size-1.5 rounded-full bg-live" />
-                    {formatClock(match)}
-                  </span>
-                ) : (
-                  formatClock(match)
-                )}
-              </span>
-              <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                <TeamMark team={home ?? null} size="sm" />
-                <span className="min-w-0 truncate text-sm font-medium">{home?.short ?? "—"}</span>
-              </span>
-              <span className="shrink-0 font-display text-sm tabular-nums text-fg">
-                {showScore ? `${match.homeScore}-${match.awayScore}` : "vs"}
-              </span>
-              <span className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
-                <span className="min-w-0 truncate text-sm font-medium">{away?.short ?? "—"}</span>
-                <TeamMark team={away ?? null} size="sm" />
-              </span>
-            </button>
-          );
-        })}
+      <div className="panel rounded-xl bg-surface px-1.5 py-1.5 sm:px-2">
+        {groups.map((group) => (
+          <div key={group.key} className="border-b border-border py-1 last:border-b-0">
+            <h3 className="px-1.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+              {group.label}
+            </h3>
+            <ul className="grid grid-cols-1 min-[540px]:grid-cols-2 xl:grid-cols-3">
+              {group.matches.map((match) => (
+                <AgendaRow
+                  key={match.id}
+                  data={data}
+                  match={match}
+                  focusId={focusId}
+                  onFocus={onFocus}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </section>
+  );
+}
+
+function AgendaRow({
+  data,
+  match,
+  focusId,
+  onFocus,
+}: {
+  data: PlayoffSnapshot;
+  match: MatchRow;
+  focusId: string | null;
+  onFocus: (id: string) => void;
+}) {
+  const home = teamById(data, match.homeId);
+  const away = teamById(data, match.awayId);
+  const live = match.state === "in";
+  const started = match.state !== "pre";
+  const active = Boolean(focusId && (focusId === match.homeId || focusId === match.awayId));
+  const homeName = home?.short ?? "Local";
+  const awayName = away?.short ?? "Visita";
+  const when = formatClock(match);
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onFocus(home?.id ?? away?.id ?? "")}
+        title={`${homeName} vs ${awayName}`}
+        className={cn(
+          "flex min-h-8 w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors duration-150",
+          active && "bg-surface-2",
+        )}
+      >
+        <span
+          className={cn(
+            "inline-flex w-14 shrink-0 items-center gap-1 text-[11px] font-semibold tabular-nums text-muted",
+            live && "text-live",
+          )}
+        >
+          <span className={cn("size-1.5 shrink-0 rounded-full", live ? "live-dot bg-live" : "opacity-0")} />
+          {when}
+        </span>
+        <TeamMark team={home ?? null} size="xs" />
+        <span className="min-w-0 shrink truncate text-xs font-medium">{homeName}</span>
+        <span
+          className={cn(
+            "shrink-0 text-[11px] font-semibold tabular-nums",
+            started ? "text-fg" : "text-faint",
+            live && "text-live",
+          )}
+        >
+          {started ? `${match.homeScore}-${match.awayScore}` : "vs"}
+        </span>
+        <TeamMark team={away ?? null} size="xs" />
+        <span className="min-w-0 shrink truncate text-xs font-medium">{awayName}</span>
+      </button>
+    </li>
   );
 }

@@ -214,6 +214,24 @@ export function buildOctavos(A: StandingRow[], B: StandingRow[]): KnockoutMatch[
   ];
 }
 
+export function toMatchRow(match: RawMatch): MatchRow {
+  return {
+    id: match.id,
+    date: match.date,
+    venue: match.venue,
+    state: match.state,
+    clock: match.clock,
+    homeId: match.homeId,
+    awayId: match.awayId,
+    homeScore: match.homeScore,
+    awayScore: match.awayScore,
+    counted: match.state === "post",
+    projected: false,
+    homeRecord: match.homeRecord,
+    awayRecord: match.awayRecord,
+  };
+}
+
 export function buildSnapshot(input: {
   tournament: string;
   rawStandings: RawStanding[];
@@ -230,21 +248,7 @@ export function buildSnapshot(input: {
     ),
   };
 
-  const baseMatches: MatchRow[] = input.rawMatches.map((match) => ({
-    id: match.id,
-    date: match.date,
-    venue: match.venue,
-    state: match.state,
-    clock: match.clock,
-    homeId: match.homeId,
-    awayId: match.awayId,
-    homeScore: match.homeScore,
-    awayScore: match.awayScore,
-    counted: match.state === "post",
-    projected: false,
-    homeRecord: match.homeRecord,
-    awayRecord: match.awayRecord,
-  }));
+  const baseMatches: MatchRow[] = input.rawMatches.map((match) => toMatchRow(match));
 
   const projected = projectStandings(official, baseMatches);
   const useProjected = projected.matches.some((match) => match.projected);
@@ -261,6 +265,7 @@ export function buildSnapshot(input: {
     projected: useProjected,
     zones,
     matches: projected.matches.sort((a, b) => a.date.localeCompare(b.date)),
+    agenda: [],
     octavos,
     remaining: [],
     cuartos: [

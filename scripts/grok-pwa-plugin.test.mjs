@@ -480,6 +480,14 @@ test("renders the manifest with the per-app name", () => {
   assert.equal(manifest.icons[0].src, "/__grok/icon-180.png");
 });
 
+test("manifest uses the site title when the host has no grok.me slug", () => {
+  const manifest = JSON.parse(
+    renderWebManifest("pirata.app", { title: "MATA MATA" }),
+  );
+  assert.equal(manifest.name, "MATA MATA");
+  assert.equal(manifest.short_name, "MATA MATA");
+});
+
 // Tripwires: the deployed-app path only works if Nitro scans server/ — an
 // accidental edit that drops serverDir or the middleware file would otherwise
 // fail silently (published apps would just render the app for ?install=1).

@@ -51,7 +51,7 @@ export function PlayoffApp({ initial }: { initial: PlayoffSnapshot }) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
               Liga Profesional
             </p>
-            <h1 className="font-display text-3xl leading-none tracking-wide">La Llave</h1>
+            <h1 className="font-display text-3xl leading-none tracking-wide">MATA MATA</h1>
             <p className="mt-1 text-sm text-muted">
               {live.tournament} · {live.roundLabel}
             </p>

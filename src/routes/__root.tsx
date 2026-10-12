@@ -4,7 +4,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { QueryProvider } from "@/components/query-provider";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "La Llave";
+const APP_NAME = "MATA MATA";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +15,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Cruces de playoffs de la Liga Profesional en vivo: octavos, localía y tablas de las zonas A y B.",
+          "MATA MATA sigue los cruces de la Liga Profesional en vivo: octavos, localía y tablas de las zonas A y B.",
       },
     ],
     links: [

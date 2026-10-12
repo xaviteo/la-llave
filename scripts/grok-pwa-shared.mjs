@@ -157,8 +157,12 @@ export function renderInstallPageHtml(template, { host, url } = {}) {
     .replaceAll("{{APP_URL}}", escapeHtml(stripInstallParams(url)));
 }
 
-export function renderWebManifest(hostHeader) {
-  const name = appNameFromHost(hostHeader);
+export function renderWebManifest(hostHeader, site = {}) {
+  const fromHost = appNameFromHost(hostHeader);
+  const fromSite = String(site?.title ?? "").trim();
+  // Host slugs only exist on *.grok.me. Everywhere else the published name
+  // is site.json (pirata.app would otherwise install as "Grok App").
+  const name = fromHost !== DEFAULT_APP_NAME ? fromHost : fromSite || DEFAULT_APP_NAME;
   return JSON.stringify(
     {
       name,

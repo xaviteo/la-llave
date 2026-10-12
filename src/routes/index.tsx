@@ -16,7 +16,7 @@ function Home() {
 function Pending() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-bg text-fg">
-      <p className="font-display text-2xl tracking-wide text-muted">Armando la llave…</p>
+      <p className="font-display text-2xl tracking-wide text-muted">Cargando…</p>
     </main>
   );
 }

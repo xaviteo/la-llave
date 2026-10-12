@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { TeamMark } from "@/components/team-mark";
-import { artDayKey, formatClock, formatDayHeading, teamById } from "@/lib/playoffs/format";
+import { agendaGroups, formatClock, teamById } from "@/lib/playoffs/format";
 import type { MatchRow, PlayoffSnapshot } from "@/lib/playoffs/types";
 import { cn } from "@/lib/utils";
 
@@ -13,16 +13,7 @@ export function MatchStrip({
   focusId: string | null;
   onFocus: (id: string) => void;
 }) {
-  const groups = useMemo(() => {
-    const map = new Map<string, { key: string; label: string; matches: MatchRow[] }>();
-    for (const match of data.agenda) {
-      const key = artDayKey(match.date) || match.id;
-      const group = map.get(key) ?? { key, label: formatDayHeading(match.date), matches: [] };
-      group.matches.push(match);
-      map.set(key, group);
-    }
-    return [...map.values()];
-  }, [data.agenda]);
+  const groups = useMemo(() => agendaGroups(data.agenda), [data.agenda]);
 
   if (groups.length === 0) return null;
 
@@ -37,7 +28,12 @@ export function MatchStrip({
       <div className="panel rounded-xl bg-surface px-1.5 py-1.5 sm:px-2">
         {groups.map((group) => (
           <div key={group.key} className="border-b border-border py-1 last:border-b-0">
-            <h3 className="px-1.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+            <h3
+              className={cn(
+                "px-1.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]",
+                group.today ? "font-display text-sm tracking-[0.2em] text-fg" : "text-muted",
+              )}
+            >
               {group.label}
             </h3>
             <ul className="grid grid-cols-1 min-[540px]:grid-cols-2 xl:grid-cols-3">

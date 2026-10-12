@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildLlaveCardModel } from "./share-card.ts";
+import { buildLlaveCardModel, shareChannel } from "./share-card.ts";
 import type { BracketSide, KnockoutMatch, StandingRow } from "./types.ts";
 
 function row(partial: Pick<StandingRow, "id" | "short" | "name" | "zone" | "pts">): StandingRow {
@@ -80,6 +80,36 @@ test("the card keeps both llaves and the quarter each pair feeds", () => {
   assert.equal(model.columns[0]?.pairs[0]?.matches[0]?.teams[1]?.chicken, false);
   assert.match(model.columns[0]?.pairs[0]?.matches[0]?.teams[0]?.detail ?? "", /local · 20 pts/);
   assert.equal(model.stamp, "Actualizado 12 oct 18:40");
+});
+
+test("desktop copies even when the system could open a share sheet", () => {
+  assert.equal(
+    shareChannel({ phone: false, blobReady: true, canShareFiles: true, canCopyImage: true }),
+    "clipboard",
+  );
+  assert.equal(
+    shareChannel({ phone: false, blobReady: false, canShareFiles: true, canCopyImage: true }),
+    "clipboard",
+  );
+  assert.equal(
+    shareChannel({ phone: false, blobReady: true, canShareFiles: false, canCopyImage: false }),
+    "download",
+  );
+});
+
+test("a phone shares the file only after the image is ready", () => {
+  assert.equal(
+    shareChannel({ phone: true, blobReady: true, canShareFiles: true, canCopyImage: true }),
+    "sheet",
+  );
+  assert.equal(
+    shareChannel({ phone: true, blobReady: false, canShareFiles: true, canCopyImage: true }),
+    "wait",
+  );
+  assert.equal(
+    shareChannel({ phone: true, blobReady: true, canShareFiles: false, canCopyImage: false }),
+    "download",
+  );
 });
 
 test("a prediction card says it is not the official bracket", () => {

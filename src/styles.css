@@ -135,8 +135,3 @@
   border-right: 1.5px solid color-mix(in oklab, var(--color-fg) 42%, transparent);
   border-radius: 0 8px 8px 0;
 }
-
-.bracket-join-final::before {
-  border-color: #c6a24e;
-  border-width: 2px;
-}

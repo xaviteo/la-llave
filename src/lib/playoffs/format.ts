@@ -22,6 +22,32 @@ export function artDayKey(iso: string): string {
   return `${date.getUTCFullYear()}${month}${day}`;
 }
 
+export type AgendaGroup = {
+  key: string;
+  label: string;
+  today: boolean;
+  matches: MatchRow[];
+};
+
+/** Today's matches stay under HOY until the next Argentine day, finished or not. */
+export function agendaGroups(matches: MatchRow[], now = Date.now()): AgendaGroup[] {
+  const today = artDayKey(new Date(now).toISOString());
+  const map = new Map<string, AgendaGroup>();
+  for (const match of matches) {
+    const key = artDayKey(match.date) || match.id;
+    const group = map.get(key) ?? {
+      key,
+      label: key === today ? "HOY" : formatDayHeading(match.date),
+      today: key === today,
+      matches: [],
+    };
+    group.matches.push(match);
+    map.set(key, group);
+  }
+  const groups = [...map.values()];
+  return [...groups.filter((group) => group.today), ...groups.filter((group) => !group.today)];
+}
+
 export function formatDayHeading(iso: string): string {
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return "";

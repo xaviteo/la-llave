@@ -155,7 +155,14 @@ function Branch({
   return (
     <div className="flex items-stretch">
       <div className="flex flex-col justify-around gap-3">{children}</div>
-      <div className={cn("bracket-join", toFinal && "bracket-join-final")} aria-hidden />
+      {toFinal ? (
+        <div className="relative w-8 shrink-0 self-stretch" aria-hidden>
+          <div className="absolute bottom-1/4 left-0 top-1/4 w-px bg-fg/40" />
+          <div className="absolute left-0 right-0 top-1/2 h-px bg-fg/40" />
+        </div>
+      ) : (
+        <div className="bracket-join" aria-hidden />
+      )}
       <div className="flex items-center">{output}</div>
     </div>
   );

@@ -1,8 +1,9 @@
 import { GALLINA_SVG, isTalleresCrest } from "./gallina.ts";
 import type { BracketSide, KnockoutMatch, PlayoffSnapshot } from "./types";
 
-const W = 1080;
-const H = 1350;
+const W = 1920;
+const H = 1080;
+const FILE_NAME = "mata-mata-llave.png";
 
 const COLUMNS = [
   {
@@ -164,22 +165,6 @@ function fillRound(
   ctx.fill();
 }
 
-function strokeRound(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-  color: string,
-  width = 2,
-) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  round(ctx, x, y, w, h, r);
-  ctx.stroke();
-}
-
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const image = new Image();
@@ -245,9 +230,40 @@ function drawCrest(
   ctx.restore();
 }
 
-function drawTeam(
+type Box = { x: number; y: number; w: number; h: number };
+
+function drawBox(ctx: CanvasRenderingContext2D, box: Box, stroke: string, width = 1.5) {
+  ctx.fillStyle = INK.card;
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = width;
+  const inset = width / 2;
+  ctx.strokeRect(box.x + inset, box.y + inset, box.w - width, box.h - width);
+}
+
+function drawJoin(ctx: CanvasRenderingContext2D, a: Box, b: Box, to: Box) {
+  const xFrom = a.x + a.w;
+  const yA = a.y + a.h / 2;
+  const yB = b.y + b.h / 2;
+  const yTo = to.y + to.h / 2;
+  const mid = xFrom + (to.x - xFrom) / 2;
+  ctx.strokeStyle = "rgba(238,242,244,0.42)";
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "miter";
+  ctx.beginPath();
+  ctx.moveTo(xFrom, yA);
+  ctx.lineTo(mid, yA);
+  ctx.lineTo(mid, yB);
+  ctx.lineTo(xFrom, yB);
+  ctx.moveTo(mid, yTo);
+  ctx.lineTo(to.x, yTo);
+  ctx.stroke();
+}
+
+function drawTeamRow(
   ctx: CanvasRenderingContext2D,
   team: CardTeam,
+  host: boolean,
   crests: Map<string, HTMLImageElement>,
   chicken: HTMLImageElement | null,
   x: number,
@@ -255,118 +271,135 @@ function drawTeam(
   w: number,
   h: number,
 ) {
-  const barX = x + 12;
-  fillRound(ctx, barX, y + 10, 5, h - 20, 3, team.color);
-  ctx.textAlign = "center";
+  const barW = 4;
+  ctx.fillStyle = team.color;
+  ctx.fillRect(x + 12, y + (h - 26) / 2, barW, 26);
+  ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.font = "600 20px Oswald, sans-serif";
+  ctx.font = "600 15px Oswald, sans-serif";
   ctx.fillStyle = INK.muted;
-  ctx.fillText(`${team.seed}°`, barX + 32, y + h / 2);
-
-  const crest = 54;
-  const crestX = barX + 54;
-  const crestY = y + (h - crest) / 2;
+  const seed = `${team.seed}°${host ? " L" : ""}`;
+  ctx.fillText(seed, x + 24, y + h / 2);
+  const crest = 32;
+  const crestX = x + 24 + ctx.measureText(seed).width + 10;
   drawCrest(
     ctx,
-    team.chicken ? chicken : crests.get(team.logo) ?? null,
+    team.chicken ? chicken : (crests.get(team.logo) ?? null),
     crestX,
-    crestY,
+    y + (h - crest) / 2,
     crest,
     team.name,
   );
-
-  const textX = crestX + crest + 12;
-  const textW = x + w - 14 - textX;
-  ctx.textAlign = "left";
-  ctx.font = "600 26px Oswald, sans-serif";
+  const textX = crestX + crest + 10;
+  ctx.font = "600 22px Oswald, sans-serif";
   ctx.fillStyle = INK.fg;
-  ctx.fillText(fit(ctx, team.name, textW), textX, y + h / 2 - 11);
-  ctx.font = "500 13px Figtree, sans-serif";
-  ctx.fillStyle = INK.faint;
-  ctx.fillText(fit(ctx, team.detail, textW), textX, y + h / 2 + 14);
+  ctx.fillText(fit(ctx, team.name, x + w - 12 - textX), textX, y + h / 2);
 }
 
-function drawMatch(
+function drawOctavos(
   ctx: CanvasRenderingContext2D,
   match: CardMatch,
   crests: Map<string, HTMLImageElement>,
   chicken: HTMLImageElement | null,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
+  box: Box,
 ) {
-  fillRound(ctx, x, y, w, h, 14, INK.card);
-  strokeRound(ctx, x, y, w, h, 14, match.changed ? INK.accent : INK.line, match.changed ? 2.5 : 1.5);
-
-  const header = 22;
+  drawBox(ctx, box, match.changed ? INK.accent : INK.line, match.changed ? 2.5 : 1.5);
+  const header = 20;
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
-  ctx.font = "600 11px Oswald, sans-serif";
+  ctx.font = "600 12px Oswald, sans-serif";
   ctx.fillStyle = INK.faint;
-  ctx.fillText(match.label.toUpperCase(), x + 12, y + header / 2 + 1);
-
-  ctx.font = "500 11px Figtree, sans-serif";
+  ctx.fillText(match.label.toUpperCase(), box.x + 12, box.y + header / 2 + 1);
+  ctx.font = "500 12px Figtree, sans-serif";
   ctx.textAlign = "right";
-  const right = match.changed ? "Cambió" : match.stadium;
   ctx.fillStyle = match.changed ? INK.accent : INK.faint;
-  ctx.fillText(fit(ctx, right, w * 0.55), x + w - 12, y + header / 2 + 1);
-
-  const rowH = (h - header - 8) / 2;
+  const right = match.changed ? "Cambió" : match.stadium;
+  ctx.fillText(fit(ctx, right, box.w * 0.48), box.x + box.w - 12, box.y + header / 2 + 1);
+  const rowH = (box.h - header) / 2;
   match.teams.forEach((team, index) => {
-    drawTeam(ctx, team, crests, chicken, x, y + header + index * rowH, w, rowH);
+    drawTeamRow(ctx, team, index === 0, crests, chicken, box.x, box.y + header + index * rowH, box.w, rowH);
   });
 }
 
-function drawColumn(
-  ctx: CanvasRenderingContext2D,
-  column: LlaveCardModel["columns"][number],
-  crests: Map<string, HTMLImageElement>,
-  chicken: HTMLImageElement | null,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
+function drawLater(ctx: CanvasRenderingContext2D, title: string, a: string, b: string, box: Box, changed: boolean) {
+  drawBox(ctx, box, changed ? INK.accent : INK.line, changed ? 2.5 : 1.5);
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.font = "600 14px Oswald, sans-serif";
-  ctx.fillStyle = INK.muted;
-  const title = column.title.toUpperCase();
-  ctx.fillText(title, x, y + 8);
-  const titleW = ctx.measureText(title).width;
+  ctx.font = "600 12px Oswald, sans-serif";
+  ctx.fillStyle = INK.faint;
+  ctx.fillText(title, box.x + 14, box.y + 16);
+  ctx.font = "600 18px Oswald, sans-serif";
+  ctx.fillStyle = INK.fg;
+  ctx.fillText(fit(ctx, a, box.w - 28), box.x + 14, box.y + 42);
   ctx.font = "500 11px Figtree, sans-serif";
   ctx.fillStyle = INK.faint;
-  ctx.fillText(column.note, x + titleW + 10, y + 8);
+  ctx.fillText("vs", box.x + 14, box.y + 64);
+  ctx.font = "600 18px Oswald, sans-serif";
+  ctx.fillStyle = INK.fg;
+  ctx.fillText(fit(ctx, b, box.w - 28), box.x + 14, box.y + box.h - 18);
+}
 
-  const head = 24;
-  const pairGap = 12;
-  const pairH = (h - head - pairGap) / 2;
-  column.pairs.forEach((pair, index) => {
-    const py = y + head + index * (pairH + pairGap);
-    fillRound(ctx, x, py, w, pairH, 18, INK.surface);
-    const inner = 8;
-    const labelH = 22;
-    const cardGap = 6;
-    const cardH = (pairH - inner * 2 - labelH - cardGap) / Math.max(pair.matches.length, 1);
-    pair.matches.forEach((match, matchIndex) => {
-      drawMatch(
-        ctx,
-        match,
-        crests,
-        chicken,
-        x + inner,
-        py + inner + matchIndex * (cardH + cardGap),
-        w - inner * 2,
-        cardH,
-      );
-    });
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = "500 11px Figtree, sans-serif";
-    ctx.fillStyle = INK.faint;
-    ctx.fillText(`a ${pair.next}`, x + w / 2, py + pairH - labelH / 2);
-  });
+function drawCup(ctx: CanvasRenderingContext2D, cx: number, top: number, scale: number) {
+  ctx.save();
+  ctx.translate(cx - 32 * scale, top);
+  ctx.scale(scale, scale);
+  const paint = (d: string, fill: string | null, stroke: string | null, width = 1.6) => {
+    const path = new Path2D(d);
+    if (fill) {
+      ctx.fillStyle = fill;
+      ctx.fill(path);
+    }
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = width;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.stroke(path);
+    }
+  };
+  paint("M20 8h24v10c0 10-5 18-12 20-7-2-12-10-12-20V8z", "#e4c36a", "#6e5214");
+  ctx.save();
+  ctx.globalAlpha = 0.8;
+  paint("M26 12c1 8 2 14 2 18", null, "#fff4cc");
+  ctx.restore();
+  paint("M20 14h-7c-4 0-7 3.2-7 7.2S9.2 28 14 28h6", null, "#e4c36a", 3);
+  paint("M44 14h7c4 0 7 3.2 7 7.2S54.8 28 50 28h-6", null, "#e4c36a", 3);
+  paint("M29 38h6l-1 10h-4l-1-10z", "#c9a44a", "#6e5214", 1);
+  paint("M20 50h24l-3 8H23l-3-8z", "#e4c36a", "#6e5214", 1.4);
+  paint("M18 62h28v3.5H18z", "#6e5214", null);
+  ctx.restore();
+}
+
+function drawFinal(ctx: CanvasRenderingContext2D, box: Box, changed: boolean) {
+  drawBox(ctx, box, changed ? INK.accent : "#c6a24e", changed ? 2.5 : 2);
+  drawCup(ctx, box.x + box.w / 2, box.y + 16, 1.2);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "600 13px Oswald, sans-serif";
+  ctx.fillStyle = INK.muted;
+  ctx.fillText("FINAL", box.x + box.w / 2, box.y + 112);
+  ctx.font = "600 22px Oswald, sans-serif";
+  ctx.fillStyle = INK.fg;
+  ctx.fillText("Ganador S1", box.x + box.w / 2, box.y + 146);
+  ctx.font = "500 12px Figtree, sans-serif";
+  ctx.fillStyle = INK.faint;
+  ctx.fillText("vs", box.x + box.w / 2, box.y + 170);
+  ctx.font = "600 22px Oswald, sans-serif";
+  ctx.fillStyle = INK.fg;
+  ctx.fillText("Ganador S2", box.x + box.w / 2, box.y + 196);
+  ctx.font = "500 12px Figtree, sans-serif";
+  ctx.fillStyle = INK.faint;
+  ctx.fillText("Sede LPF", box.x + box.w / 2, box.y + box.h - 22);
+}
+
+function feedLine(match: CardMatch | undefined): string {
+  if (!match) return "—";
+  return match.teams.map((team) => team.name).join(" / ");
+}
+
+function centeredOn(a: Box, b: Box, x: number, w: number, h: number): Box {
+  const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
+  return { x, y: mid - h / 2, w, h };
 }
 
 export async function renderLlavePng(
@@ -374,8 +407,8 @@ export async function renderLlavePng(
   options: { predicted: boolean; live: boolean; projected: boolean; changedIds?: ReadonlySet<string> },
 ): Promise<Blob> {
   const model = buildLlaveCardModel(data, options);
-  await document.fonts.load("600 46px Oswald");
-  await document.fonts.load("600 26px Oswald");
+  await document.fonts.load("600 52px Oswald");
+  await document.fonts.load("600 22px Oswald");
   await document.fonts.ready;
 
   const chicken = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(GALLINA_SVG)}`);
@@ -386,89 +419,205 @@ export async function renderLlavePng(
   canvas.height = H;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No se pudo armar la imagen");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
-  const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, INK.bgTop);
-  sky.addColorStop(0.45, INK.bg);
-  ctx.fillStyle = sky;
+  ctx.fillStyle = INK.bg;
   ctx.fillRect(0, 0, W, H);
-  const headerH = model.disclaimer ? 78 : 58;
+
+  const headerH = model.disclaimer ? 64 : 44;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.font = "600 22px Oswald, sans-serif";
+  ctx.font = "600 18px Oswald, sans-serif";
   ctx.fillStyle = INK.muted;
-  ctx.fillText(model.title, 36, 28);
+  ctx.fillText(model.title, 40, 22);
   ctx.font = "500 12px Figtree, sans-serif";
   ctx.fillStyle = INK.faint;
   ctx.textAlign = "right";
-  ctx.fillText(fit(ctx, model.subtitle, W * 0.62), W - 36, 28);
-  ctx.textAlign = "left";
+  ctx.fillText(fit(ctx, model.subtitle, W * 0.62), W - 40, 22);
   if (model.disclaimer) {
+    ctx.textAlign = "left";
     ctx.font = "500 12px Figtree, sans-serif";
     ctx.fillStyle = model.predicted ? INK.accent : INK.faint;
-    ctx.fillText(fit(ctx, model.disclaimer, W - 72), 36, 52);
+    ctx.fillText(fit(ctx, model.disclaimer, W - 80), 40, 46);
   }
 
-  const footerH = 108;
-  const bodyTop = headerH;
-  const bodyH = H - footerH - bodyTop;
-  const gap = 16;
-  const colW = (W - 64 - gap) / 2;
-  model.columns.forEach((column, index) => {
-    drawColumn(ctx, column, crests, chicken, 32 + index * (colW + gap), bodyTop, colW, bodyH);
+  const footerH = 100;
+  const top = headerH + 6;
+  const innerH = H - footerH - top;
+  const count = 8;
+  const cardH = Math.min(108, Math.floor((innerH - 7 * 8) / count));
+  const gap = (innerH - count * cardH) / (count - 1);
+  const octW = 700;
+  const quarterW = 300;
+  const semiW = 260;
+  const finalW = 390;
+  const join = 44;
+  const xOct = 40;
+  const xQuarter = xOct + octW + join;
+  const xSemi = xQuarter + quarterW + join;
+  const xFinal = xSemi + semiW + join;
+
+  const matches = model.columns.flatMap((column) => column.pairs.flatMap((pair) => pair.matches));
+  const octavos = matches.slice(0, count).map((match, index) => ({
+    match,
+    box: { x: xOct, y: top + index * (cardH + gap), w: octW, h: cardH } satisfies Box,
+  }));
+
+  const quarters = model.columns.flatMap((column) =>
+    column.pairs.map((pair, index) => {
+      const offset = column === model.columns[0] ? 0 : 4;
+      const first = octavos[offset + index * 2]?.box;
+      const second = octavos[offset + index * 2 + 1]?.box;
+      const changed = pair.matches.some((match) => match.changed);
+      const box =
+        first && second
+          ? centeredOn(first, second, xQuarter, quarterW, 104)
+          : { x: xQuarter, y: top, w: quarterW, h: 104 };
+      return { title: pair.next, a: feedLine(pair.matches[0]), b: feedLine(pair.matches[1]), box, changed };
+    }),
+  );
+
+  const semis = model.columns.map((column, index) => {
+    const pairA = quarters[index * 2];
+    const pairB = quarters[index * 2 + 1];
+    const changed = column.pairs.some((pair) => pair.matches.some((match) => match.changed));
+    const box =
+      pairA && pairB
+        ? centeredOn(pairA.box, pairB.box, xSemi, semiW, 104)
+        : { x: xSemi, y: top, w: semiW, h: 104 };
+    return {
+      title: index === 0 ? "S1" : "S2",
+      a: `Ganador ${pairA?.title ?? ""}`.trim(),
+      b: `Ganador ${pairB?.title ?? ""}`.trim(),
+      box,
+      changed,
+    };
   });
+
+  const finalBox =
+    semis[0] && semis[1]
+      ? centeredOn(semis[0].box, semis[1].box, xFinal, finalW, 236)
+      : { x: xFinal, y: top, w: finalW, h: 236 };
+  const anyChanged = matches.some((match) => match.changed);
+
+  for (let index = 0; index < quarters.length; index += 1) {
+    const quarter = quarters[index];
+    const first = octavos[index * 2]?.box;
+    const second = octavos[index * 2 + 1]?.box;
+    if (quarter && first && second) drawJoin(ctx, first, second, quarter.box);
+  }
+  if (semis[0] && quarters[0] && quarters[1]) drawJoin(ctx, quarters[0].box, quarters[1].box, semis[0].box);
+  if (semis[1] && quarters[2] && quarters[3]) drawJoin(ctx, quarters[2].box, quarters[3].box, semis[1].box);
+  if (semis[0] && semis[1]) drawJoin(ctx, semis[0].box, semis[1].box, finalBox);
+
+  for (const item of octavos) drawOctavos(ctx, item.match, crests, chicken, item.box);
+  for (const item of quarters) drawLater(ctx, item.title, item.a, item.b, item.box, item.changed);
+  for (const item of semis) drawLater(ctx, item.title, item.a, item.b, item.box, item.changed);
+  drawFinal(ctx, finalBox, anyChanged);
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = "500 12px Figtree, sans-serif";
+  ctx.font = "500 13px Figtree, sans-serif";
   ctx.fillStyle = INK.faint;
   ctx.fillText(model.stamp, W / 2, H - 78);
   ctx.fillStyle = INK.fg;
-  ctx.font = "600 46px Oswald, sans-serif";
-  ctx.fillText("pirata.app", W / 2, H - 42);
+  ctx.font = "600 52px Oswald, sans-serif";
+  ctx.fillText("pirata.app", W / 2, H - 40);
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) throw new Error("No se pudo armar la imagen");
   return blob;
 }
 
-export type PublishResult = "shared" | "copied" | "downloaded" | "cancelled";
+export type PublishResult = "shared" | "copied" | "downloaded" | "cancelled" | "wait";
+
+export function shareChannel(input: {
+  phone: boolean;
+  blobReady: boolean;
+  canShareFiles: boolean;
+  canCopyImage: boolean;
+}): "sheet" | "clipboard" | "wait" | "download" {
+  if (input.phone && input.blobReady && input.canShareFiles) return "sheet";
+  if (input.phone && !input.blobReady) return "wait";
+  if (!input.phone && input.canCopyImage) return "clipboard";
+  return "download";
+}
+
+export function prefersShareSheet(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return (
+    window.matchMedia("(pointer: coarse)").matches && window.matchMedia("(max-width: 900px)").matches
+  );
+}
 
 function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = name;
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
 function shareCancelled(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-export async function publishLlaveCard(blob: Blob): Promise<PublishResult> {
-  const file = new File([blob], "mata-mata-llave.png", { type: "image/png" });
-  if (typeof navigator.share === "function" && navigator.canShare?.({ files: [file] })) {
+function pngBlob(blob: Blob): Blob {
+  return blob.type === "image/png" ? blob : blob.slice(0, blob.size, "image/png");
+}
+
+/** ClipboardItem and navigator.share have to run inside the click, before any await. */
+export function publishLlaveCard(source: Blob | Promise<Blob>): Promise<PublishResult> {
+  const blobReady = source instanceof Blob;
+  const pending = Promise.resolve(source);
+  const file = blobReady ? new File([source], FILE_NAME, { type: "image/png" }) : null;
+  const channel = shareChannel({
+    phone: prefersShareSheet(),
+    blobReady,
+    canShareFiles: Boolean(
+      file && typeof navigator.share === "function" && navigator.canShare?.({ files: [file] }),
+    ),
+    canCopyImage: typeof ClipboardItem !== "undefined" && Boolean(navigator.clipboard?.write),
+  });
+
+  if (channel === "sheet" && file && source instanceof Blob) {
+    return navigator.share({ files: [file] }).then(
+      () => "shared" as const,
+      (error: unknown) => {
+        if (shareCancelled(error)) return "cancelled" as const;
+        downloadBlob(source, FILE_NAME);
+        return "downloaded" as const;
+      },
+    );
+  }
+
+  if (channel === "wait") return Promise.resolve("wait");
+
+  if (channel === "clipboard") {
     try {
-      await navigator.share({
-        files: [file],
-        title: "MATA MATA",
-        text: "La llave de octavos · pirata.app",
-      });
-      return "shared";
-    } catch (error) {
-      if (shareCancelled(error)) return "cancelled";
+      const payload = source instanceof Blob ? pngBlob(source) : pending.then(pngBlob);
+      const item = new ClipboardItem({
+        "image/png": payload,
+      } as unknown as Record<string, Blob>);
+      return navigator.clipboard.write([item]).then(
+        () => "copied" as const,
+        () =>
+          pending.then((blob) => {
+            downloadBlob(blob, FILE_NAME);
+            return "downloaded" as const;
+          }),
+      );
+    } catch {
+      /* This browser wants a real Blob, not a promise. */
     }
   }
-  try {
-    if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      return "copied";
-    }
-  } catch {
-    /* The download still gives them the image. */
-  }
-  downloadBlob(blob, file.name);
-  return "downloaded";
+
+  return pending.then((blob) => {
+    downloadBlob(blob, FILE_NAME);
+    return "downloaded" as const;
+  });
 }

@@ -6,6 +6,7 @@ import { BracketTree } from "@/components/bracket-tree";
 import { HowItWorks } from "@/components/how-it-works";
 import { MatchStrip } from "@/components/match-strip";
 import { PredictionPanel } from "@/components/prediction-panel";
+import { ShareLlaveButton } from "@/components/share-llave-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
@@ -56,7 +57,7 @@ export function PlayoffApp({ initial }: { initial: PlayoffSnapshot }) {
               {live.tournament} · {live.roundLabel}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
             <ThemeToggle />
             {live.live ? (
               <span className="inline-flex h-11 items-center gap-2 rounded-full bg-live/15 px-3 text-xs font-semibold uppercase tracking-wide text-live">
@@ -73,6 +74,14 @@ export function PlayoffApp({ initial }: { initial: PlayoffSnapshot }) {
               <RefreshCw className={query.isFetching ? "size-3.5 animate-spin" : "size-3.5"} />
               Actualizar
             </Button>
+            <ShareLlaveButton
+              className="w-full whitespace-nowrap sm:w-auto"
+              data={data}
+              predicted={showingPrediction}
+              live={live.live && !showingPrediction}
+              projected={live.projected && !showingPrediction}
+              changedIds={showingPrediction ? changedIds : undefined}
+            />
           </div>
         </div>
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 pb-3">

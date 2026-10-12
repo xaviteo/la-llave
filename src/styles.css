@@ -116,8 +116,8 @@
 }
 
 .bracket-join {
-  width: 12px;
-  margin: 0 2px;
+  width: 20px;
+  margin: 0 6px;
   align-self: stretch;
   position: relative;
   flex-shrink: 0;
@@ -126,12 +126,17 @@
 .bracket-join::before {
   content: "";
   position: absolute;
-  top: 25%;
-  bottom: 25%;
+  top: 16%;
+  bottom: 16%;
   left: 0;
   right: 0;
-  border-top: 1px solid color-mix(in oklab, var(--color-fg) 28%, transparent);
-  border-bottom: 1px solid color-mix(in oklab, var(--color-fg) 28%, transparent);
-  border-right: 1px solid color-mix(in oklab, var(--color-fg) 28%, transparent);
-  border-radius: 0 4px 4px 0;
+  border-top: 1.5px solid color-mix(in oklab, var(--color-fg) 42%, transparent);
+  border-bottom: 1.5px solid color-mix(in oklab, var(--color-fg) 42%, transparent);
+  border-right: 1.5px solid color-mix(in oklab, var(--color-fg) 42%, transparent);
+  border-radius: 0 8px 8px 0;
+}
+
+.bracket-join-final::before {
+  border-color: #c6a24e;
+  border-width: 2px;
 }

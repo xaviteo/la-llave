@@ -135,8 +135,6 @@ const INK = {
   muted: "#8b9aaa",
   faint: "#6b7c8d",
   accent: "#7eb6d4",
-  ink: "#0c1014",
-  live: "#e05b5b",
   line: "rgba(238,242,244,0.12)",
 };
 
@@ -265,7 +263,7 @@ function drawTeam(
   ctx.fillStyle = INK.muted;
   ctx.fillText(`${team.seed}°`, barX + 32, y + h / 2);
 
-  const crest = 46;
+  const crest = 54;
   const crestX = barX + 54;
   const crestY = y + (h - crest) / 2;
   drawCrest(
@@ -280,10 +278,10 @@ function drawTeam(
   const textX = crestX + crest + 12;
   const textW = x + w - 14 - textX;
   ctx.textAlign = "left";
-  ctx.font = "700 24px Figtree, sans-serif";
+  ctx.font = "600 26px Oswald, sans-serif";
   ctx.fillStyle = INK.fg;
-  ctx.fillText(fit(ctx, team.name, textW), textX, y + h / 2 - 12);
-  ctx.font = "500 16px Figtree, sans-serif";
+  ctx.fillText(fit(ctx, team.name, textW), textX, y + h / 2 - 11);
+  ctx.font = "500 13px Figtree, sans-serif";
   ctx.fillStyle = INK.faint;
   ctx.fillText(fit(ctx, team.detail, textW), textX, y + h / 2 + 14);
 }
@@ -301,18 +299,18 @@ function drawMatch(
   fillRound(ctx, x, y, w, h, 14, INK.card);
   strokeRound(ctx, x, y, w, h, 14, match.changed ? INK.accent : INK.line, match.changed ? 2.5 : 1.5);
 
-  const header = 36;
+  const header = 22;
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
-  ctx.font = "600 16px Oswald, sans-serif";
-  ctx.fillStyle = INK.muted;
-  ctx.fillText(match.label.toUpperCase(), x + 14, y + header / 2 + 2);
+  ctx.font = "600 11px Oswald, sans-serif";
+  ctx.fillStyle = INK.faint;
+  ctx.fillText(match.label.toUpperCase(), x + 12, y + header / 2 + 1);
 
-  ctx.font = "500 14px Figtree, sans-serif";
+  ctx.font = "500 11px Figtree, sans-serif";
   ctx.textAlign = "right";
-  const right = match.changed ? "Cambió" : `Local · ${match.stadium}`;
+  const right = match.changed ? "Cambió" : match.stadium;
   ctx.fillStyle = match.changed ? INK.accent : INK.faint;
-  ctx.fillText(fit(ctx, right, w * 0.58), x + w - 14, y + header / 2 + 2);
+  ctx.fillText(fit(ctx, right, w * 0.55), x + w - 12, y + header / 2 + 1);
 
   const rowH = (h - header - 8) / 2;
   match.teams.forEach((team, index) => {
@@ -332,22 +330,24 @@ function drawColumn(
 ) {
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.font = "600 28px Oswald, sans-serif";
-  ctx.fillStyle = INK.fg;
-  ctx.fillText(column.title.toUpperCase(), x, y + 14);
-  ctx.font = "500 15px Figtree, sans-serif";
+  ctx.font = "600 14px Oswald, sans-serif";
+  ctx.fillStyle = INK.muted;
+  const title = column.title.toUpperCase();
+  ctx.fillText(title, x, y + 8);
+  const titleW = ctx.measureText(title).width;
+  ctx.font = "500 11px Figtree, sans-serif";
   ctx.fillStyle = INK.faint;
-  ctx.fillText(column.note, x, y + 40);
+  ctx.fillText(column.note, x + titleW + 10, y + 8);
 
-  const head = 62;
+  const head = 24;
   const pairGap = 12;
   const pairH = (h - head - pairGap) / 2;
   column.pairs.forEach((pair, index) => {
     const py = y + head + index * (pairH + pairGap);
     fillRound(ctx, x, py, w, pairH, 18, INK.surface);
-    const inner = 12;
-    const labelH = 34;
-    const cardGap = 8;
+    const inner = 8;
+    const labelH = 22;
+    const cardGap = 6;
     const cardH = (pairH - inner * 2 - labelH - cardGap) / Math.max(pair.matches.length, 1);
     pair.matches.forEach((match, matchIndex) => {
       drawMatch(
@@ -363,9 +363,9 @@ function drawColumn(
     });
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = "600 15px Oswald, sans-serif";
-    ctx.fillStyle = INK.accent;
-    ctx.fillText(`GANADORES → ${pair.next}`, x + w / 2, py + pairH - labelH / 2 - 2);
+    ctx.font = "500 11px Figtree, sans-serif";
+    ctx.fillStyle = INK.faint;
+    ctx.fillText(`a ${pair.next}`, x + w / 2, py + pairH - labelH / 2);
   });
 }
 
@@ -374,8 +374,8 @@ export async function renderLlavePng(
   options: { predicted: boolean; live: boolean; projected: boolean; changedIds?: ReadonlySet<string> },
 ): Promise<Blob> {
   const model = buildLlaveCardModel(data, options);
-  await document.fonts.load("600 72px Oswald");
-  await document.fonts.load("600 28px Figtree");
+  await document.fonts.load("600 46px Oswald");
+  await document.fonts.load("600 26px Oswald");
   await document.fonts.ready;
 
   const chicken = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(GALLINA_SVG)}`);
@@ -392,63 +392,40 @@ export async function renderLlavePng(
   sky.addColorStop(0.45, INK.bg);
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = INK.accent;
-  ctx.fillRect(0, 0, W, 8);
-
-  const headerH = model.disclaimer ? 228 : 188;
+  const headerH = model.disclaimer ? 78 : 58;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.font = "600 18px Figtree, sans-serif";
-  ctx.fillStyle = INK.accent;
-  if ("letterSpacing" in ctx) ctx.letterSpacing = "4px";
-  ctx.fillText(model.kicker.toUpperCase(), 40, 48);
-  if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
-
-  const badgeW = Math.max(132, model.badge.length * 16 + 36);
-  const badgeX = W - 40 - badgeW;
-  const badgeColor = model.badge === "En vivo" ? INK.live : model.predicted ? INK.accent : "#243140";
-  fillRound(ctx, badgeX, 28, badgeW, 40, 20, badgeColor);
-  ctx.font = "700 16px Figtree, sans-serif";
-  ctx.fillStyle = model.badge === "Ahora" ? INK.fg : model.badge === "En vivo" ? "#fff" : INK.ink;
-  ctx.textAlign = "center";
-  ctx.fillText(model.badge.toUpperCase(), badgeX + badgeW / 2, 48);
-
-  ctx.textAlign = "left";
-  ctx.font = "600 68px Oswald, sans-serif";
-  ctx.fillStyle = INK.fg;
-  if ("letterSpacing" in ctx) ctx.letterSpacing = "1px";
-  ctx.fillText(model.title, 40, 112);
-  if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
-
-  ctx.font = "500 22px Figtree, sans-serif";
+  ctx.font = "600 22px Oswald, sans-serif";
   ctx.fillStyle = INK.muted;
-  ctx.fillText(fit(ctx, model.subtitle, W - 80), 40, 162);
+  ctx.fillText(model.title, 36, 28);
+  ctx.font = "500 12px Figtree, sans-serif";
+  ctx.fillStyle = INK.faint;
+  ctx.textAlign = "right";
+  ctx.fillText(fit(ctx, model.subtitle, W * 0.62), W - 36, 28);
+  ctx.textAlign = "left";
   if (model.disclaimer) {
-    ctx.font = "600 18px Figtree, sans-serif";
-    ctx.fillStyle = model.predicted ? INK.accent : INK.muted;
-    ctx.fillText(fit(ctx, model.disclaimer, W - 80), 40, 198);
+    ctx.font = "500 12px Figtree, sans-serif";
+    ctx.fillStyle = model.predicted ? INK.accent : INK.faint;
+    ctx.fillText(fit(ctx, model.disclaimer, W - 72), 36, 52);
   }
 
-  const footerH = 64;
+  const footerH = 108;
   const bodyTop = headerH;
-  const bodyH = H - footerH - bodyTop - 12;
+  const bodyH = H - footerH - bodyTop;
   const gap = 16;
-  const colW = (W - 80 - gap) / 2;
+  const colW = (W - 64 - gap) / 2;
   model.columns.forEach((column, index) => {
-    drawColumn(ctx, column, crests, chicken, 40 + index * (colW + gap), bodyTop, colW, bodyH);
+    drawColumn(ctx, column, crests, chicken, 32 + index * (colW + gap), bodyTop, colW, bodyH);
   });
 
-  ctx.fillStyle = "rgba(238,242,244,0.1)";
-  ctx.fillRect(40, H - footerH, W - 80, 1);
-  ctx.font = "500 16px Figtree, sans-serif";
-  ctx.fillStyle = INK.faint;
-  ctx.textAlign = "left";
+  ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(model.stamp || "Octavos", 40, H - footerH / 2);
-  ctx.textAlign = "right";
-  ctx.fillStyle = INK.accent;
-  ctx.font = "600 18px Figtree, sans-serif";
-  ctx.fillText("pirata.app", W - 40, H - footerH / 2);
+  ctx.font = "500 12px Figtree, sans-serif";
+  ctx.fillStyle = INK.faint;
+  ctx.fillText(model.stamp, W / 2, H - 78);
+  ctx.fillStyle = INK.fg;
+  ctx.font = "600 46px Oswald, sans-serif";
+  ctx.fillText("pirata.app", W / 2, H - 42);
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) throw new Error("No se pudo armar la imagen");

@@ -19,7 +19,7 @@ import { usePredictions } from "@/lib/playoffs/use-predictions";
 
 export function PlayoffApp({ initial }: { initial: PlayoffSnapshot }) {
   const [focusId, setFocusId] = useState<string | null>(null);
-  const [layout, setLayout] = useState<"cards" | "tree">("cards");
+  const [layout, setLayout] = useState<"cards" | "tree">("tree");
   const [source, setSource] = useState<"now" | "prediction">("now");
   const { predictions, setScore, clear, filled } = usePredictions();
   const query = useQuery({
@@ -124,9 +124,9 @@ export function PlayoffApp({ initial }: { initial: PlayoffSnapshot }) {
 
         {layout === "tree" ? (
           <section>
-            <h2 className="mb-3 font-display text-2xl tracking-wide">
-              {showingPrediction ? "Llave, si se da tu predicción" : "Llave, ahora"}
-            </h2>
+            {showingPrediction ? (
+              <p className="mb-2 text-xs text-accent">Si se da tu predicción</p>
+            ) : null}
             <BracketTree
               data={data}
               focusId={focusId}

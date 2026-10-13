@@ -188,7 +188,7 @@ function fallbackSnapshot(): PlayoffSnapshot {
     rawMatches: FALLBACK_MATCHES,
     source: "fallback",
   });
-  return { ...snapshot, agenda: snapshot.matches };
+  return { ...snapshot, agenda: snapshot.matches, calendar: snapshot.matches };
 }
 
 function calendarYmds(payload: unknown, today: string): string[] {
@@ -289,9 +289,11 @@ function attachAgenda(
   slate: RawMatch[],
   today: string,
 ): PlayoffSnapshot {
-  const selected = selectFecha(agendaFrom(slate, today));
+  const calendar = agendaFrom(slate, today);
+  const selected = selectFecha(calendar);
   return {
     ...attachRemaining(snapshot, slate),
+    calendar,
     agenda: selected.matches,
     agendaRound: selected.round,
   };

@@ -1,10 +1,8 @@
-import { Moon, Sun } from "lucide-react";
 import { useLayoutEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 
 const THEME_KEY = "lallave-theme";
-const LIGHT_CHROME = "#f3f6f8";
-const DARK_CHROME = "#0c1014";
+const LIGHT_CHROME = "#B2CFD6";
+const DARK_CHROME = "#101719";
 
 function readTheme(): "dark" | "light" {
   try {
@@ -22,8 +20,8 @@ function applyTheme(theme: "dark" | "light") {
   if (meta) meta.setAttribute("content", theme === "light" ? LIGHT_CHROME : DARK_CHROME);
 }
 
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+export function ThemeToggle({ className = "" }: { className?: string }) {
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useLayoutEffect(() => {
     const next = readTheme();
@@ -34,8 +32,10 @@ export function ThemeToggle() {
   const light = theme === "light";
 
   return (
-    <Button
-      variant="outline"
+    <button
+      type="button"
+      className={`btn btn-text ${className}`.trim()}
+      aria-pressed={!light}
       onClick={() => {
         const next = light ? "dark" : "light";
         try {
@@ -46,11 +46,8 @@ export function ThemeToggle() {
         applyTheme(next);
         setTheme(next);
       }}
-      aria-pressed={light}
-      aria-label={light ? "Activar modo oscuro" : "Activar modo claro"}
     >
-      {light ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-      {light ? "Claro" : "Oscuro"}
-    </Button>
+      {light ? "Oscuro" : "Claro"}
+    </button>
   );
 }

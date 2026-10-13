@@ -23,11 +23,26 @@ export const Route = createRootRoute({
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Oswald:wght@500;600&display=swap",
+        rel: "preload",
+        href: "/fonts/archivo-latin.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: "/fonts/source-serif-4-latin.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: "/fonts/source-serif-4-italic-latin.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
     ],
   }),
@@ -37,7 +52,7 @@ export const Route = createRootRoute({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              '(function(){try{var t=localStorage.getItem("lallave-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;var m=document.querySelector("meta[name=\\"theme-color\\"]");if(!m){m=document.createElement("meta");m.name="theme-color";document.head.appendChild(m);}m.setAttribute("content",t==="light"?"#f3f6f8":"#0c1014");}catch(e){}})();',
+              '(function(){try{var t=localStorage.getItem("lallave-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;var m=document.querySelector("meta[name=\\"theme-color\\"]");if(!m){m=document.createElement("meta");m.name="theme-color";document.head.appendChild(m);}m.setAttribute("content",t==="light"?"#B2CFD6":"#101719");}catch(e){}})();',
           }}
         />
         <HeadContent />

@@ -75,6 +75,8 @@ export type PlayoffSnapshot = {
   /** Matches of the fecha currently on the board. */
   agenda: MatchRow[];
   agendaRound: number | null;
+  /** Recent and upcoming matches already fetched, including the fecha on the board. */
+  calendar: MatchRow[];
   octavos: KnockoutMatch[];
   remaining: RemainingMatch[];
   cuartos: { id: string; label: string; a: string; b: string }[];

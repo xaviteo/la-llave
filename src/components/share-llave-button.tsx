@@ -1,6 +1,4 @@
-import { Loader2, Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   prefersShareSheet,
   publishLlaveCard,
@@ -94,9 +92,9 @@ export function ShareLlaveButton({
   }, [key]);
 
   return (
-    <Button
+    <button
       type="button"
-      className={className}
+      className={`btn btn-text ${className ?? ""}`.trim()}
       disabled={busy}
       aria-live="polite"
       onClick={() => {
@@ -125,8 +123,7 @@ export function ShareLlaveButton({
           .finally(() => setBusy(false));
       }}
     >
-      {busy ? <Loader2 className="size-4 animate-spin" /> : <Share2 className="size-4" />}
-      {busy ? "Armando…" : note || "Compartir llave"}
-    </Button>
+      {busy ? "Armando…" : note || "Compartir"}
+    </button>
   );
 }

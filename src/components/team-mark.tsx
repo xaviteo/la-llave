@@ -1,59 +1,31 @@
-import { cn } from "@/lib/utils";
 import { GALLINA_SVG, isTalleresCrest } from "@/lib/playoffs/gallina";
 import type { StandingRow } from "@/lib/playoffs/types";
 
-function Gallina() {
-  return (
-    <span
-      className="block size-full"
-      aria-hidden
-      dangerouslySetInnerHTML={{ __html: GALLINA_SVG }}
-    />
-  );
-}
-
 export function TeamMark({
   team,
-  size = "md",
+  size = 28,
 }: {
   team: Pick<StandingRow, "id" | "short" | "logo" | "name" | "abbr"> | null;
-  size?: "xs" | "sm" | "md";
+  size?: number;
 }) {
-  const dim = size === "xs" ? "size-4" : size === "sm" ? "size-6" : "size-8";
   if (!team) {
     return (
-      <span
-        className={cn(
-          dim,
-          "grid shrink-0 place-items-center rounded-md bg-surface-2 text-[10px] text-faint",
-        )}
-      >
-        —
+      <span className="crest" style={{ width: size, height: size }} aria-hidden>
+        <span className="crest-fallback">—</span>
       </span>
     );
   }
   return (
-    <span className={cn(dim, "relative grid shrink-0 place-items-center overflow-hidden rounded-md bg-surface-2")}>
+    <span className="crest" style={{ width: size, height: size }}>
       {isTalleresCrest(team) ? (
-        <Gallina />
+        <span aria-hidden dangerouslySetInnerHTML={{ __html: GALLINA_SVG }} />
       ) : team.logo ? (
-        <img
-          src={team.logo}
-          alt=""
-          className="size-full object-contain p-0.5 outline outline-1 -outline-offset-1 outline-fg/10"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-            const fallback = event.currentTarget.nextElementSibling;
-            if (fallback instanceof HTMLElement) fallback.style.display = "grid";
-          }}
-        />
-      ) : null}
-      <span
-        className="absolute inset-0 hidden place-items-center text-[9px] font-semibold uppercase tracking-wide text-muted"
-        aria-hidden
-      >
-        {team.abbr.slice(0, 3)}
-      </span>
+        <img src={team.logo} alt="" width={size} height={size} />
+      ) : (
+        <span className="crest-fallback" aria-hidden>
+          {team.abbr.slice(0, 3)}
+        </span>
+      )}
     </span>
   );
 }

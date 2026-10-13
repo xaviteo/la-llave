@@ -1,5 +1,5 @@
-import { fixtureId, REMAINING_FIXTURE } from "./fixture";
-import { teamMeta } from "./teams";
+import { fixtureId, REMAINING_FIXTURE } from "./fixture.ts";
+import { teamMeta } from "./teams.ts";
 import type {
   BracketSide,
   KnockoutMatch,
@@ -267,6 +267,7 @@ export function buildSnapshot(input: {
     matches: projected.matches.sort((a, b) => a.date.localeCompare(b.date)),
     agenda: [],
     agendaRound: null,
+    calendar: [],
     octavos,
     remaining: [],
     cuartos: [

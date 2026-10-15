@@ -60,6 +60,7 @@ export function StandingsView({
           <strong>Simulación.</strong> El orden usa los resultados que cargaste. La tabla real no cambia.
         </p>
       ) : null}
+      {full ? <p className="bracket-hint">Deslizá la tabla para ver todas las estadísticas. El equipo queda fijo.</p> : null}
       <div className={`standings-layout both zone-${zone}${full ? " is-full" : ""}`}>
         <ZoneTable zone="A" rows={A} focusId={focusId} onFocus={onFocus} baseline={baseline?.A} full={full} />
         <ZoneTable zone="B" rows={B} focusId={focusId} onFocus={onFocus} baseline={baseline?.B} full={full} />
@@ -104,7 +105,7 @@ function ZoneTable({
         Zona <span className="zone-mark">{zone}</span>
       </h2>
       <p className="zone-legend">Los ocho primeros clasifican.</p>
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0} role="region" aria-label={`Estadísticas de la zona ${zone}`}>
         <table className="standings">
           <caption>{`Zona ${zone}. Los ocho primeros clasifican a los cruces. El orden respeta el desempate del torneo.`}</caption>
           <thead>
@@ -211,13 +212,14 @@ function AnnualTable({
       {rows.length === 0 ? (
         <p className="banner">La tabla anual necesita el Apertura, que ahora no está disponible.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0} role="region" aria-label="Estadísticas de la tabla anual">
           <table className="standings annual">
             <caption>
               Tabla anual 2026. Suma de la fase regular del Apertura y del Clausura. El color marca al campeón
               de Liga, la Libertadores, la fase previa y la Sudamericana. Belgrano ya está en la Libertadores
               por el Apertura.
             </caption>
+            {full ? <colgroup><col style={{ width: 32 }} /><col style={{ width: 192 }} />{Array.from({ length: 7 }, (_, index) => <col key={index} style={{ width: 64 }} />)}</colgroup> : null}
             <thead>
               <tr>
                 <th scope="col">#</th>
@@ -272,10 +274,10 @@ function AnnualTable({
                       onClick={() => onFocus(row.id)}
                     >
                       <TeamMark team={row} size={22} />
-                      <span className="team-name">{row.short}</span>
-                      {row.marks.length > 0 ? (
-                        <span className="sr-only">{row.marks.map(cupLabel).join(", ")}</span>
-                      ) : null}
+                      <span className="team-copy">
+                        <span className="team-name">{row.short}</span>
+                        {row.marks.length > 0 ? <span className="cup-label">{row.marks.map(cupLabel).join(" · ")}</span> : null}
+                      </span>
                       {focusId === row.id ? <span className="you-tag">Tu equipo</span> : null}
                     </button>
                   </td>

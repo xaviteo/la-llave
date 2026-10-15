@@ -96,6 +96,7 @@ export function ShareLlaveButton({
       type="button"
       className={`btn btn-ink share-llave ${className ?? ""}`.trim()}
       disabled={busy}
+      aria-label={busy ? "Armando imagen" : note || "Compartir llave"}
       aria-live="polite"
       onClick={() => {
         setNote("");
@@ -123,7 +124,7 @@ export function ShareLlaveButton({
           .finally(() => setBusy(false));
       }}
     >
-      {busy ? "Armando…" : note || "Compartir llave"}
+      {busy ? "Armando…" : note || <><span className="share-label-long">Compartir llave</span><span className="share-label-short">Compartir</span></>}
     </button>
   );
 }

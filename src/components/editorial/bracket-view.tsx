@@ -110,8 +110,18 @@ export function BracketView({
 
       <HoyStrip data={data} />
 
+      <div className="bracket-toolbar">
+        {scenario}
+        <div className="view-switch" role="group" aria-label="Presentación de los cruces">
+          <button type="button" aria-pressed={presentation === "llave"} onClick={() => onPresentation("llave")}>Llave</button>
+          <span className="switch-slash" aria-hidden>/</span>
+          <button type="button" aria-pressed={presentation === "lista"} onClick={() => onPresentation("lista")}>Lista</button>
+        </div>
+      </div>
+      {presentation === "llave" ? <p className="bracket-hint">Seguí un equipo tocando su nombre. En pantallas chicas, deslizá para recorrer la llave.</p> : null}
+
       {presentation === "llave" ? (
-        <div className="bracket-scroll">
+        <div className="bracket-scroll" tabIndex={0} role="region" aria-label="Llave completa, desplazable horizontalmente">
           <TournamentBracket
             data={data}
             focusId={focusId}
@@ -141,25 +151,6 @@ export function BracketView({
         </>
       )}
 
-      <div className="bracket-foot">
-        {scenario}
-        <div className="view-switch" role="group" aria-label="Presentación de los cruces">
-          <button type="button" aria-pressed={presentation === "llave"} onClick={() => onPresentation("llave")}>
-            Llave
-          </button>
-          <span className="switch-slash" aria-hidden>
-            /
-          </span>
-          <button type="button" aria-pressed={presentation === "lista"} onClick={() => onPresentation("lista")}>
-            Lista
-          </button>
-        </div>
-        {scenario ? null : (
-          <p className="meta" style={{ margin: 0 }}>
-            Ocho de cada zona. Localía para el mejor ubicado.
-          </p>
-        )}
-      </div>
 
       <div className="rules">
         <div>

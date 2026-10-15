@@ -233,10 +233,12 @@ function drawSideTeam(
 
 function drawFrame(ctx: CanvasRenderingContext2D, box: Box, fill: string) {
   ctx.fillStyle = fill;
-  ctx.fillRect(box.x, box.y, box.w, box.h);
-  ctx.strokeStyle = INK.line;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(box.x + 1, box.y + 1, box.w - 2, box.h - 2);
+  ctx.beginPath();
+  ctx.roundRect(box.x, box.y, box.w, box.h, 18);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(36, 58, 64, 0.22)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 }
 
 function drawOpenMatch(
@@ -330,6 +332,7 @@ export async function renderLlavePng(
   await document.fonts.load("700 30px Archivo");
   await document.fonts.load("700 28px Archivo");
   await document.fonts.load("500 16px Archivo");
+  await document.fonts.load('800 110px "Source Serif 4"');
   await document.fonts.ready;
 
   const chicken = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(GALLINA_SVG)}`);
@@ -344,32 +347,39 @@ export async function renderLlavePng(
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  ctx.fillStyle = INK.bg;
+  // Real transparent corners survive PNG export; the inset board stays legible in chats.
+  ctx.beginPath();
+  ctx.roundRect(0, 0, W, H, 48);
+  ctx.clip();
+  ctx.fillStyle = INK.fg;
   ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = INK.bg;
+  ctx.beginPath();
+  ctx.roundRect(32, 196, W - 64, 756, 28);
+  ctx.fill();
 
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
-  ctx.fillStyle = INK.fg;
-  ctx.font = "700 26px Archivo, Arial, sans-serif";
-  ctx.fillText(fit(ctx, data.tournament, 640), 32, 36);
+  ctx.fillStyle = INK.bg;
+  ctx.font = '800 110px "Source Serif 4", Georgia, serif';
+  ctx.fillText("pirata.app", 64, 88);
+  ctx.fillStyle = INK.cream;
+  ctx.font = "500 24px Archivo, Arial, sans-serif";
+  ctx.fillText(fit(ctx, data.tournament, 840), 68, 156);
   ctx.textAlign = "right";
-  ctx.font = "700 22px Archivo, Arial, sans-serif";
-  ctx.fillText(options.predicted ? "Simulación" : "Actual", W - 32, 28);
-  ctx.fillStyle = INK.faint;
-  ctx.font = "500 16px Archivo, Arial, sans-serif";
-  ctx.fillText(model.stamp || data.roundLabel, W - 32, 52);
-  if (model.disclaimer) {
-    ctx.textAlign = "left";
-    ctx.fillText(fit(ctx, model.disclaimer, 720), 32, 58);
-  }
+  ctx.font = "900 52px Archivo, Arial, sans-serif";
+  ctx.fillText("TODO POR LA COPA.", W - 64, 86);
+  ctx.fillStyle = INK.bg;
+  ctx.font = "500 24px Archivo, Arial, sans-serif";
+  ctx.fillText(`${options.predicted ? "TU SIMULACIÓN" : "LOS CRUCES, HOY"}  /  OCTAVOS → FINAL`, W - 64, 151);
 
-  const top = 78;
-  const rowH = 206;
+  const top = 232;
+  const rowH = 160;
   const gap = 16;
   const octW = 400;
   const laterW = 160;
-  const xL = 32;
-  const xR = W - 32 - octW;
+  const xL = 64;
+  const xR = W - 64 - octW;
   const yOf = (index: number) => top + index * (rowH + gap);
   const pairBox = (first: number, second: number, x: number, w: number, h: number): Box => {
     const mid = (yOf(first) + rowH / 2 + yOf(second) + rowH / 2) / 2;
@@ -443,11 +453,15 @@ export async function renderLlavePng(
 
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = INK.faint;
-  ctx.font = "600 18px Archivo, Arial, sans-serif";
-  ctx.fillText("MATA MATA", 32, H - 28);
+  ctx.fillStyle = INK.cream;
+  ctx.font = "700 28px Archivo, Arial, sans-serif";
+  ctx.fillText("MATA MATA  /  EL CAMINO A LA FINAL", 64, 995);
+  ctx.fillStyle = INK.bg;
+  ctx.font = "500 21px Archivo, Arial, sans-serif";
+  ctx.fillText(model.disclaimer || "Ocho de cada zona. Una copa. Todo por jugar.", 64, 1035);
   ctx.textAlign = "right";
-  ctx.fillText("pirata.app", W - 32, H - 28);
+  ctx.fillText(model.stamp || data.roundLabel, W - 64, 995);
+  ctx.fillText("Armá tu escenario en pirata.app", W - 64, 1035);
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) throw new Error("No se pudo armar la imagen");

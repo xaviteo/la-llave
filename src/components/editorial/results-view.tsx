@@ -131,7 +131,7 @@ export function ResultsView({
             <section key={group.key}>
               <h3 className="day-label">
                 <span>{group.label}</span>
-                <span>Estado</span>
+                <span className="desk-only">Estado</span>
               </h3>
               <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
                 {group.matches.map((match) => (

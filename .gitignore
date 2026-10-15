@@ -19,3 +19,4 @@ artifacts/
 
 # Credenciales y pasos de deploy. No subir.
 DEPLOY.local.md
+qa/

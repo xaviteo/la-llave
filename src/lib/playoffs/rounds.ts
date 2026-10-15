@@ -15,7 +15,7 @@ type Roundable = {
  * Everything else takes the earliest fecha in which both clubs are still free,
  * so a match postponed past the next weekend falls back into the gap.
  */
-export function assignRounds<T extends Roundable>(matches: T[]): T[] {
+export function assignRounds<T extends Roundable>(matches: T[]): Array<T & { round?: number }> {
   const ordered = [...matches].sort(
     (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id),
   );

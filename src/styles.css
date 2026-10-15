@@ -23,14 +23,14 @@
   --color-action-bg: #101719;
   --color-action-text: #f3eedf;
   --color-title: var(--color-ink);
-  --cup-champion: #e6b325;
+  --cup-champion: #ddd0ac;
   --cup-champion-text: #101719;
-  --cup-lib: #1a4f8b;
-  --cup-lib-text: #f7f4ea;
-  --cup-previa: #d97706;
+  --cup-lib: #c4d9d9;
+  --cup-lib-text: #101719;
+  --cup-previa: #d7d3c3;
   --cup-previa-text: #101719;
-  --cup-suda: #b42318;
-  --cup-suda-text: #f7f4ea;
+  --cup-suda: #c6d0c3;
+  --cup-suda-text: #101719;
   --font-ui: "Archivo", Arial, sans-serif;
   --font-editorial: "Source Serif 4", Georgia, serif;
   --shell-pad: 16px;
@@ -46,9 +46,9 @@
   --color-paper-blue-hover: #1c3338;
   --color-paper-cream: #1a3338;
   --color-paper-cream-hover: #234148;
-  --color-ink: #b2cfd6;
-  --color-ink-secondary: #9ec4cc;
-  --color-ink-muted: #7eafb8;
+  --color-ink: #e5e9e5;
+  --color-ink-secondary: #bacbcd;
+  --color-ink-muted: #9aafb3;
   --color-rule-strong: #b2cfd6;
   --color-rule-soft: rgba(178, 207, 214, 0.32);
   --color-focus: #d5eef2;
@@ -57,7 +57,15 @@
   --color-warning: #e4c98a;
   --color-action-bg: #b2cfd6;
   --color-action-text: #101719;
-  --color-title: #5dcee0;
+  --color-title: #b2cfd6;
+  --cup-champion: #38372c;
+  --cup-lib: #22363c;
+  --cup-previa: #34352e;
+  --cup-suda: #283932;
+  --cup-champion-text: #e5e9e5;
+  --cup-lib-text: #e5e9e5;
+  --cup-previa-text: #e5e9e5;
+  --cup-suda-text: #e5e9e5;
 }
 
 @font-face {
@@ -269,13 +277,14 @@
 
 .site-header-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 4px 20px;
   min-height: var(--header-h);
 }
 
 .wordmark {
+  white-space: nowrap;
   margin: 0;
   font-family: var(--font-editorial);
   font-weight: 800;
@@ -493,7 +502,7 @@
   min-height: 44px;
   padding: 8px 12px;
   border: 0;
-  border-radius: 0;
+  border-radius: 10px;
   background: transparent;
   color: var(--color-ink);
   font-weight: 600;
@@ -533,7 +542,8 @@
   display: inline-flex;
   align-items: stretch;
   gap: 0;
-  min-height: 36px;
+  min-height: 44px;
+  border-radius: 10px;
   padding: 3px;
   border: 1px solid var(--color-ink);
   background: transparent;
@@ -544,7 +554,8 @@
   display: grid;
   place-items: center;
   width: 34px;
-  height: 28px;
+  height: 36px;
+  border-radius: 6px;
   color: var(--color-ink-muted);
 }
 
@@ -693,7 +704,8 @@
 .match-node {
   width: 100%;
   min-width: 0;
-  padding: 2px 6px 3px;
+  padding: 6px;
+  border-radius: 12px;
   border: 1px solid var(--color-rule-soft);
   background: color-mix(in srgb, var(--color-paper-cream) 62%, transparent);
 }
@@ -871,11 +883,15 @@
 .round-list {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .round-match {
-  padding: 8px 0 12px;
-  border-bottom: 1px solid var(--color-rule-soft);
+  padding: 10px 12px;
+  border: 1px solid var(--color-rule-soft);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-paper-cream) 62%, var(--color-paper-blue));
 }
 
 .round-match .team-slot {
@@ -972,6 +988,7 @@
 }
 
 .fecha-arrow {
+  border-radius: 10px;
   display: grid;
   place-items: center;
   width: 44px;
@@ -993,7 +1010,8 @@
 }
 
 .fecha-index button {
-  min-height: 36px;
+  min-height: 44px;
+  border-radius: 8px;
   padding: 0;
   border: 1px solid var(--color-rule-strong);
   background: transparent;
@@ -1375,6 +1393,11 @@
     table-layout: fixed;
   }
 
+  .standings-layout.is-full .standings.annual {
+    table-layout: fixed;
+    width: 44rem;
+  }
+
   .standings.annual th:first-child,
   .standings.annual td:first-child {
     width: 1.8rem;
@@ -1505,7 +1528,7 @@
   width: 48px;
   height: 48px;
   border: 1px solid var(--color-rule-strong);
-  border-radius: 2px;
+  border-radius: 10px;
   background: var(--color-paper-cream);
   color: var(--color-ink);
   font-size: 24px;
@@ -1891,4 +1914,90 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Compact controls and quiet surfaces preserve the editorial palette at every size. */
+.site-header { border-bottom: 1px solid var(--color-rule-soft); }
+.theme-switch .is-on { background: var(--color-action-bg); }
+.freshness { font-size: 13px; }
+.page-hero { margin-bottom: 12px; }
+.bracket-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin: 12px 0 18px;
+}
+.bracket-toolbar .scenario, .bracket-toolbar .view-switch { margin: 0; }
+.bracket-hint { margin: 0 0 10px; font-size: 13px; color: var(--color-ink-muted); }
+.bracket-scroll { border-radius: 12px; scrollbar-color: var(--color-ink-muted) transparent; }
+.match-node .team-button { min-height: 38px; }
+.match-node .team-slot { min-height: 38px; }
+.match-node .team-name { font-size: 14px; }
+.match-node .team-slot.is-followed { border-radius: 6px; }
+.round-match .venue-line { padding: 6px 4px 0; }
+.round-tabs button, .zone-tabs button { padding-inline: 8px; }
+.hoy-strip li { border-radius: 8px; padding: 8px 10px; }
+.banner, .sim-alert { border-radius: 10px; padding: 12px 14px; }
+.cup-label { display: block; max-width: 9rem; white-space: normal; font-size: 10px; font-weight: 500; line-height: 1.4; color: inherit; opacity: .85; }
+.standings tbody th { color: var(--color-ink-secondary); }
+.standings .team-button { min-height: 44px; }
+.standings.annual .team-button { min-height: 52px; }
+.standings .team-col-sticky { min-width: 12rem; max-width: 12rem; }
+.standings tr.is-champion .team-col-sticky { background: var(--cup-champion); }
+.standings tr.is-followed .team-col-sticky { background: var(--color-paper-cream); }
+.standings tr.is-followed th:first-child { box-shadow: inset 3px 0 var(--color-focus); }
+.standings tr.is-block-end th, .standings tr.is-block-end td { border-bottom-color: var(--color-rule-soft); }
+.cup-swatch { border-radius: 4px; }
+.table-scroll { scrollbar-color: var(--color-ink-muted) transparent; }
+.standings-layout.is-full .standings.annual { width: 672px; min-width: 672px; table-layout: fixed; }
+.standings-layout.is-full .standings.annual th, .standings-layout.is-full .standings.annual td { width: auto; }
+.table-scroll:focus-visible, .bracket-scroll:focus-visible { outline-offset: -2px; }
+.section-head .filter-switch { margin-top: 0; }
+.score-input:focus-visible { background: var(--color-paper-blue-light); }
+.mobile-nav a { white-space: nowrap; }
+html { scroll-padding-top: 90px; scroll-padding-bottom: 90px; }
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .header-tools .desk-only { display: none; }
+  .primary-nav { gap: 14px; }
+  .site-header-bar { gap: 16px; }
+  .share-llave { padding-inline: 12px; font-size: 14px; }
+}
+@media (max-width: 767px) {
+  .site-header-bar { gap: 8px; min-height: 68px; }
+  .header-tools { gap: 8px; }
+  .wordmark { font-size: clamp(23px, 6.8vw, 28px); }
+  .theme-switch { width: 44px; padding: 3px; justify-content: center; }
+  .theme-switch span { width: 36px; }
+  .theme-switch span:not(.is-on) { display: none; }
+  .share-llave { min-height: 44px; max-width: 132px; padding-inline: 10px; font-size: 12px; }
+  .share-llave .share-label-long { display: none; }
+  .bracket-toolbar { gap: 4px 12px; }
+  .bracket-toolbar .scenario, .bracket-toolbar .view-switch { gap: 6px; }
+  .bracket-toolbar button { font-size: 14px; }
+  .bracket-stage { min-width: 70rem; }
+  .score-row {
+    grid-template-columns: minmax(0, 1fr) 3.2rem minmax(0, 1fr);
+    grid-template-areas: 'home score away' '. state .';
+    padding: 10px 0;
+    gap: 4px 8px;
+  }
+  .score-state { align-items: center; text-align: center; }
+  .score-side .team-name { white-space: normal; overflow: visible; font-size: 13px; }
+  .score-side.is-away { justify-content: flex-end; text-align: right; }
+  .score-side.is-away .team-button { flex-direction: row-reverse; }
+  .standings td { padding-inline: 5px; }
+  .standings td.team-col .team-name { max-width: 100%; font-size: 14px; }
+  .standings .team-button { gap: 6px; }
+  .standings .team-copy { overflow: hidden; }
+  .standings .you-tag { display: none; }
+  .standings-layout.is-full .standings .team-col-sticky { width: 12rem; }
+  .mobile-nav { box-shadow: 0 -4px 24px rgb(16 23 25 / .08); }
+  .mobile-nav a { font-family: var(--font-ui); font-size: 12px; font-weight: 600; }
+  .mobile-nav a[aria-current='page'] { background: var(--color-paper-blue-light); }
+}
+@media (min-width: 768px) {
+  .share-label-short { display: none; }
 }

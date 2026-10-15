@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 import { TeamMark } from "@/components/team-mark";
 import {
@@ -6,9 +6,9 @@ import {
   BRACKET_GRAPH,
   possiblePath,
   roundSlotIds,
-  slotDetail,
   type BracketRound,
 } from "@/lib/playoffs/bracket-graph";
+import { matchStatus, teamById, withTodayMatches } from "@/lib/playoffs/format";
 import type { KnockoutMatch, PlayoffSnapshot, StandingRow } from "@/lib/playoffs/types";
 
 const ROUNDS: { id: BracketRound; label: string }[] = [
@@ -17,18 +17,6 @@ const ROUNDS: { id: BracketRound; label: string }[] = [
   { id: "semis", label: "Semis" },
   { id: "final", label: "Final" },
 ];
-
-function useMinWidth(px: number) {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia(`(min-width: ${px}px)`);
-    const apply = () => setMatches(media.matches);
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, [px]);
-  return matches;
-}
 
 function affectedNodes(seeds: Set<string>): Set<string> {
   const nodes = new Set(seeds);
@@ -92,22 +80,8 @@ export function BracketView({
   onPresentation: (value: "llave" | "lista") => void;
   scenario?: ReactNode;
 }) {
-  const wide = useMinWidth(1200);
   const [round, setRound] = useState<BracketRound>("octavos");
   const [pathTeam, setPathTeam] = useState<string | null>(null);
-  const overlay = !wide && presentation === "llave";
-  const inlineBracket = wide && presentation === "llave";
-  const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!overlay) return;
-    closeRef.current?.focus();
-    const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") onPresentation("lista");
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [overlay, onPresentation]);
 
   const path = useMemo(
     () => (pathTeam ? new Set(possiblePath(pathTeam, data.octavos)) : new Set<string>()),
@@ -134,14 +108,18 @@ export function BracketView({
         </p>
       ) : null}
 
-      {inlineBracket ? (
-        <TournamentBracket
-          data={data}
-          focusId={focusId}
-          onFocus={onFocus}
-          marked={marked}
-          changedIds={changedIds}
-        />
+      <HoyStrip data={data} />
+
+      {presentation === "llave" ? (
+        <div className="bracket-scroll">
+          <TournamentBracket
+            data={data}
+            focusId={focusId}
+            onFocus={onFocus}
+            marked={marked}
+            changedIds={changedIds}
+          />
+        </div>
       ) : (
         <>
           <div className="section-head">
@@ -208,48 +186,21 @@ export function BracketView({
         </div>
       </div>
 
-      {overlay ? (
-        <div className="llave-overlay" role="dialog" aria-modal="true" aria-label="Llave completa">
-          <header>
-            <p className="wordmark" style={{ fontSize: 22 }}>
-              Llave completa
-            </p>
-            <button ref={closeRef} type="button" className="btn btn-text" onClick={() => onPresentation("lista")}>
-              Cerrar
-            </button>
-          </header>
-          <div className="rule-double" />
-          <div className="bracket-scroll">
-            <TournamentBracket
-              data={data}
-              focusId={focusId}
-              onFocus={onFocus}
-              marked={marked}
-              changedIds={changedIds}
-            />
-          </div>
-        </div>
-      ) : null}
-
       <h2 className="sr-only">Partidos de la llave</h2>
       <ol className="sr-only">
         {data.octavos.map((match) => (
           <li key={match.id}>
-            {match.label}. {match.note}. Local: {match.home.team?.name ?? "a definir"}. Visita:{" "}
-            {match.away.team?.name ?? "a definir"}. {match.homeAdvantage}.
+            {match.label}. {match.note}. {match.home.team?.name ?? "A definir"} contra{" "}
+            {match.away.team?.name ?? "A definir"}. {match.homeAdvantage}.
           </li>
         ))}
         {data.cuartos.map((match) => (
-          <li key={match.id}>
-            {match.label}. A definir. {match.a} y {match.b}.
-          </li>
+          <li key={match.id}>{match.label}. A definir.</li>
         ))}
         {data.semis.map((match) => (
-          <li key={match.id}>
-            {match.label}. A definir. {match.a} y {match.b}.
-          </li>
+          <li key={match.id}>{match.label}. A definir.</li>
         ))}
-        <li>Final. A definir. Ganador S1 y ganador S2. {data.finalNote}</li>
+        <li>Final. A definir. {data.finalNote}</li>
       </ol>
     </section>
   );
@@ -333,12 +284,11 @@ function RoundList({
               />
             );
           }
-          const [home, away] = slotDetail(data, id);
           return (
             <article key={id} className="round-match">
-              <SlotLine name="A definir" detail={home} />
+              <SlotLine name="A definir" />
               <div className="slot-rule" />
-              <SlotLine name="A definir" detail={away} />
+              <SlotLine name="A definir" />
               <p className="venue-line">Sede a confirmar</p>
             </article>
           );
@@ -368,7 +318,7 @@ function OctavosCard({
   const followed = involved.find((team) => team.id === focusId);
   return (
     <article className="round-match">
-      <TeamSlot team={match.home.team} seed={match.home.seed} zone={match.home.zone} local focusId={focusId} onFocus={onFocus} />
+      <TeamSlot team={match.home.team} seed={match.home.seed} zone={match.home.zone} focusId={focusId} onFocus={onFocus} />
       <div className="slot-rule" />
       <TeamSlot team={match.away.team} seed={match.away.seed} zone={match.away.zone} focusId={focusId} onFocus={onFocus} />
       <p className="venue-line">{stadium}</p>
@@ -386,14 +336,11 @@ function OctavosCard({
   );
 }
 
-function SlotLine({ name, detail }: { name: string; detail: string }) {
+function SlotLine({ name }: { name: string }) {
   return (
     <div className="team-slot">
       <TeamMark team={null} size={28} />
-      <span className="team-copy">
-        <span className="team-name">{name}</span>
-        <span className="origin">{detail}</span>
-      </span>
+      <span className="team-name">{name}</span>
     </div>
   );
 }
@@ -402,18 +349,18 @@ function TeamSlot({
   team,
   seed,
   zone,
-  local = false,
   focusId,
   onFocus,
   side,
+  size = 28,
 }: {
   team: StandingRow | null;
   seed?: number;
   zone?: string;
-  local?: boolean;
   focusId: string | null;
   onFocus: (id: string) => void;
   side?: "left" | "right";
+  size?: number;
 }) {
   const followed = Boolean(team && team.id === focusId);
   const name = team?.short ?? "A definir";
@@ -426,12 +373,9 @@ function TeamSlot({
           aria-pressed={followed}
           onClick={() => onFocus(team.id)}
         >
-          <TeamMark team={team} size={28} />
+          <TeamMark team={team} size={size} />
           <span className="team-copy">
-            <span className="team-name">
-              {name}
-              {local ? <span className="local-tag"> Local</span> : null}
-            </span>
+            <span className="team-name">{name}</span>
             {followed ? <span className="you-tag">Tu equipo</span> : null}
             <span className="meta num">{team.pts} pts</span>
           </span>
@@ -447,6 +391,45 @@ function TeamSlot({
         </span>
       )}
     </div>
+  );
+}
+
+function HoyStrip({ data }: { data: PlayoffSnapshot }) {
+  const matches = useMemo(
+    () => withTodayMatches([], [...(data.calendar ?? []), ...data.matches, ...data.remaining]),
+    [data.calendar, data.matches, data.remaining],
+  );
+  if (matches.length === 0) return null;
+  return (
+    <section className="hoy-strip" aria-label="Partidos de hoy">
+      <h2>HOY</h2>
+      <ul>
+        {matches.map((match) => {
+          const status = matchStatus(match);
+          return (
+            <li key={match.id}>
+              <span>{teamById(data, match.homeId)?.short ?? "Local"}</span>
+              <span className="num">{status.score ?? "–"}</span>
+              <span>{teamById(data, match.awayId)?.short ?? "Visita"}</span>
+              <span className={status.live ? "live-word" : "meta"}>{status.label}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function CupMark() {
+  const [ready, setReady] = useState(true);
+  if (!ready) return <p className="cup-pending">Copa de la Liga Profesional</p>;
+  return (
+    <img
+      className="cup"
+      src="/brand/copa-lpf.png"
+      alt="Copa de la Liga Profesional"
+      onError={() => setReady(false)}
+    />
   );
 }
 
@@ -533,22 +516,22 @@ function TournamentBracket({
         ))}
         {BRACKET_GRAPH.left.quarters.map((slot, index) => (
           <div key={slot.id} className="bracket-cell" style={cell(3, index * 2 + 1, 2)}>
-            <LaterNode id={slot.id} data={data} />
+            <LaterNode id={slot.id} />
           </div>
         ))}
         <div className="bracket-cell" style={cell(5, 1, 4)}>
-          <LaterNode id={BRACKET_GRAPH.left.semi.id} data={data} />
+          <LaterNode id={BRACKET_GRAPH.left.semi.id} />
         </div>
         <div className="final-cell">
-          <p className="cup-pending">Copa de la Liga Profesional</p>
-          <LaterNode id="F" data={data} />
+          <CupMark />
+          <LaterNode id="F" />
         </div>
         <div className="bracket-cell" style={{ ...cell(9, 1, 4), justifyContent: "flex-end" }}>
-          <LaterNode id={BRACKET_GRAPH.right.semi.id} data={data} />
+          <LaterNode id={BRACKET_GRAPH.right.semi.id} />
         </div>
         {BRACKET_GRAPH.right.quarters.map((slot, index) => (
           <div key={slot.id} className="bracket-cell" style={{ ...cell(11, index * 2 + 1, 2), justifyContent: "flex-end" }}>
-            <LaterNode id={slot.id} data={data} />
+            <LaterNode id={slot.id} />
           </div>
         ))}
         {BRACKET_GRAPH.right.octavos.map((id, index) => (
@@ -587,8 +570,8 @@ function OctavosNode({
         team={match.home.team}
         seed={match.home.seed}
         zone={match.home.zone}
-        local
         side={side}
+        size={22}
         focusId={focusId}
         onFocus={onFocus}
       />
@@ -598,6 +581,7 @@ function OctavosNode({
         seed={match.away.seed}
         zone={match.away.zone}
         side={side}
+        size={22}
         focusId={focusId}
         onFocus={onFocus}
       />
@@ -606,22 +590,15 @@ function OctavosNode({
   );
 }
 
-function LaterNode({ id, data }: { id: string; data: PlayoffSnapshot }) {
-  const [home, away] = slotDetail(data, id);
+function LaterNode({ id }: { id: string }) {
   return (
     <div className="match-node" data-node={id}>
       <div className="team-slot">
-        <span className="team-copy">
-          <span className="team-name">A definir</span>
-          <span className="origin">{home}</span>
-        </span>
+        <span className="team-name">A definir</span>
       </div>
       <div className="slot-rule" />
       <div className="team-slot">
-        <span className="team-copy">
-          <span className="team-name">A definir</span>
-          <span className="origin">{away}</span>
-        </span>
+        <span className="team-name">A definir</span>
       </div>
     </div>
   );

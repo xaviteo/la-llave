@@ -70,44 +70,54 @@ export function SimulationView({
       <div className="sim-layout">
         <div>
           <div className="fecha-bar">
-            <button
-              type="button"
-              className="btn btn-text"
-              disabled={grouped.findIndex((entry) => entry[0] === selected) <= 0}
-              onClick={() => {
-                const index = grouped.findIndex((entry) => entry[0] === selected);
-                const prev = grouped[index - 1];
-                if (prev) setRound(prev[0]);
-              }}
-            >
-              Fecha anterior
-            </button>
-            <h2>{selected ? `Fecha ${selected}` : "Fechas"}</h2>
-            <button
-              type="button"
-              className="btn btn-text"
-              disabled={grouped.findIndex((entry) => entry[0] === selected) >= grouped.length - 1}
-              onClick={() => {
-                const index = grouped.findIndex((entry) => entry[0] === selected);
-                const next = grouped[index + 1];
-                if (next) setRound(next[0]);
-              }}
-            >
-              Fecha siguiente
-            </button>
-            <span className="num meta">
-              {done} de {open.length} completados
-            </span>
-            <div className="filter-switch" role="group" aria-label="Filtro de partidos">
-              <button type="button" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>
-                Todos
+            <div className="fecha-pager">
+              <button
+                type="button"
+                className="fecha-arrow"
+                aria-label="Fecha anterior"
+                disabled={grouped.findIndex((entry) => entry[0] === selected) <= 0}
+                onClick={() => {
+                  const index = grouped.findIndex((entry) => entry[0] === selected);
+                  const prev = grouped[index - 1];
+                  if (prev) setRound(prev[0]);
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+                  <path d="M11.5 3.5 L5.5 9 L11.5 14.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
               </button>
-              <span className="switch-slash" aria-hidden>
-                /
+              <h2>{selected ? `Fecha ${selected}` : "Fechas"}</h2>
+              <button
+                type="button"
+                className="fecha-arrow"
+                aria-label="Fecha siguiente"
+                disabled={grouped.findIndex((entry) => entry[0] === selected) >= grouped.length - 1}
+                onClick={() => {
+                  const index = grouped.findIndex((entry) => entry[0] === selected);
+                  const next = grouped[index + 1];
+                  if (next) setRound(next[0]);
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+                  <path d="M6.5 3.5 L12.5 9 L6.5 14.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </button>
+            </div>
+            <div className="fecha-tools">
+              <div className="filter-switch" role="group" aria-label="Filtro de partidos">
+                <button type="button" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>
+                  Todos
+                </button>
+                <span className="switch-slash" aria-hidden>
+                  /
+                </span>
+                <button type="button" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>
+                  Mi equipo
+                </button>
+              </div>
+              <span className="num meta">
+                {done} de {open.length} completados
               </span>
-              <button type="button" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>
-                Mi equipo
-              </button>
             </div>
           </div>
           <div className="zone-tabs" aria-label="Fechas pendientes">

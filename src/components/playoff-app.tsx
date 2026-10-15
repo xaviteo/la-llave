@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BracketView } from "@/components/editorial/bracket-view";
 import { EditorialPageHeader, ScenarioSwitch } from "@/components/editorial/page-header";
 import { ResultsView } from "@/components/editorial/results-view";
@@ -13,18 +13,6 @@ import { changedMatchIds, snapshotWithPredictions } from "@/lib/playoffs/logic";
 import type { PlayoffSnapshot } from "@/lib/playoffs/types";
 import { usePredictions } from "@/lib/playoffs/use-predictions";
 
-function useMinWidth(px: number) {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia(`(min-width: ${px}px)`);
-    const apply = () => setMatches(media.matches);
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, [px]);
-  return matches;
-}
-
 export function PlayoffApp({
   initial,
   vista,
@@ -34,7 +22,6 @@ export function PlayoffApp({
   vista: Vista;
   onVista: (vista: Vista) => void;
 }) {
-  const wide = useMinWidth(1200);
   const [presentation, setPresentation] = useState<"llave" | "lista" | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [source, setSource] = useState<"now" | "prediction">("now");
@@ -56,11 +43,11 @@ export function PlayoffApp({
     () => (showingPrediction ? changedMatchIds(live.octavos, predicted.octavos) : new Set<string>()),
     [showingPrediction, live.octavos, predicted.octavos],
   );
-  const bracketMode = presentation ?? (wide ? "llave" : "lista");
+  const bracketMode = presentation ?? "llave";
   const scenarioSwitch = (
     <ScenarioSwitch value={source} filled={filled} onChange={setSource} />
   );
-  const scenarioInBracket = vista === "cruces" && wide;
+  const scenarioInBracket = vista === "cruces";
 
   const toggleFocus = (id: string) => {
     if (!id) return;
@@ -119,6 +106,7 @@ export function PlayoffApp({
         <StandingsView
           A={data.zones.A}
           B={data.zones.B}
+          apertura={live.apertura ?? []}
           focusId={focusId}
           onFocus={toggleFocus}
           baseline={showingPrediction ? live.zones : undefined}

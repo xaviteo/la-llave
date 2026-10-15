@@ -30,16 +30,18 @@ export type AgendaGroup = {
   matches: MatchRow[];
 };
 
-/** Today's matches stay under HOY until the next Argentine day, finished or not. */
+/** Today's matches stay under HOY until the next Argentine day, finished or not. A match in progress is HOY even if it kicked off yesterday. */
 export function agendaGroups(matches: MatchRow[], now = Date.now()): AgendaGroup[] {
   const today = artDayKey(new Date(now).toISOString());
   const map = new Map<string, AgendaGroup>();
   for (const match of matches) {
-    const key = artDayKey(match.date) || match.id;
+    const day = artDayKey(match.date);
+    const onToday = match.state === "in" || day === today;
+    const key = onToday ? today || match.id : day || match.id;
     const group = map.get(key) ?? {
       key,
-      label: key === today ? "HOY" : formatDayHeading(match.date),
-      today: key === today,
+      label: onToday ? "HOY" : formatDayHeading(match.date),
+      today: onToday,
       matches: [],
     };
     group.matches.push(match);
@@ -154,6 +156,38 @@ function richness(match: MatchRow): number {
   if (match.state !== "pre") score += 4;
   if (!match.id.startsWith("r")) score += 1;
   return score;
+}
+
+function pairKey(match: MatchRow): string {
+  return `${match.homeId}-${match.awayId}`;
+}
+
+function preferMatch(prev: MatchRow, next: MatchRow): MatchRow {
+  if (next.state === "in" && prev.state !== "in") return next;
+  if (prev.state === "in" && next.state !== "in") return prev;
+  return richness(next) >= richness(prev) ? next : prev;
+}
+
+/**
+ * Matches being played, and every match whose Argentine day is today,
+ * even when the open fecha already moved on. Pairings already on the board stay once.
+ */
+export function withTodayMatches(board: MatchRow[], calendar: MatchRow[], now = Date.now()): MatchRow[] {
+  const today = artDayKey(new Date(now).toISOString());
+  const best = new Map<string, MatchRow>();
+  for (const match of calendar) {
+    const day = artDayKey(match.date);
+    if (match.state !== "in" && day !== today) continue;
+    if (!match.homeId || !match.awayId) continue;
+    const key = pairKey(match);
+    const prev = best.get(key);
+    best.set(key, prev ? preferMatch(prev, match) : match);
+  }
+  const seen = new Set(board.map(pairKey));
+  const extras = [...best.values()]
+    .filter((match) => !seen.has(pairKey(match)))
+    .sort((a, b) => Number(b.state === "in") - Number(a.state === "in") || a.date.localeCompare(b.date));
+  return [...extras, ...board];
 }
 
 /** One row per pairing. A played match wins over a fixture stub with another id. */

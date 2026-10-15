@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { agendaGroups, formatDayHeading } from "./format.ts";
+import { agendaGroups, formatDayHeading, withTodayMatches } from "./format.ts";
 import type { MatchRow } from "./types.ts";
 
 function row(id: string, date: string, state: MatchRow["state"] = "pre"): MatchRow {
@@ -52,4 +52,39 @@ test("a fecha with nothing on today does not invent a HOY group", () => {
   const groups = agendaGroups([row("manana", AFTER_MIDNIGHT)], NOON);
   assert.equal(groups.some((group) => group.today), false);
   assert.equal(groups[0]?.label, formatDayHeading(AFTER_MIDNIGHT));
+});
+
+test("a match in progress is HOY even if it kicked off on the previous Argentine day", () => {
+  const groups = agendaGroups([row("vivo", YESTERDAY, "in")], NOON);
+  assert.equal(groups[0]?.label, "HOY");
+  assert.equal(groups[0]?.today, true);
+  assert.equal(groups[0]?.matches[0]?.id, "vivo");
+});
+
+test("today's match from another fecha joins the open board once, under HOY", () => {
+  const board = row("otro", AFTER_MIDNIGHT);
+  board.homeId = "9";
+  board.awayId = "8";
+  board.round = 12;
+  const live = row("sarmiento", TONIGHT, "in");
+  live.homeId = "3";
+  live.awayId = "4";
+  live.round = 11;
+  const stub = row("sarmiento-viejo", TONIGHT, "pre");
+  stub.homeId = "3";
+  stub.awayId = "4";
+  const shown = withTodayMatches([board], [stub, live, board], NOON);
+  assert.deepEqual(
+    shown.map((match) => match.id),
+    ["sarmiento", "otro"],
+  );
+  const groups = agendaGroups(shown, NOON);
+  assert.equal(groups[0]?.label, "HOY");
+  assert.equal(groups[0]?.matches[0]?.id, "sarmiento");
+});
+
+test("a pairing already on the board is not listed twice", () => {
+  const match = row("noche", TONIGHT, "post");
+  const shown = withTodayMatches([match], [match], NOON);
+  assert.equal(shown.length, 1);
 });

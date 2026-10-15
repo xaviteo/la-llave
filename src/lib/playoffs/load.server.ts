@@ -1,9 +1,9 @@
 import { selectFecha } from "./current-fecha";
 import { artDayKey } from "./format";
 import { FALLBACK_MATCHES, FALLBACK_STANDINGS, FALLBACK_TOURNAMENT } from "./fallback";
-import { fixtureRound } from "./fixture";
 import { attachRemaining, buildSnapshot, toMatchRow, type RawMatch, type RawStanding } from "./logic";
-import type { MatchRow, MatchState, PlayoffSnapshot, ZoneId } from "./types";
+import { assignRounds } from "./rounds";
+import type { AperturaTotal, MatchRow, MatchState, PlayoffSnapshot, ZoneId } from "./types";
 
 const STANDINGS_URLS = [
   "https://site.web.api.espn.com/apis/v2/sports/soccer/arg.1/standings",
@@ -25,12 +25,20 @@ let cache: CacheEntry | null = null;
 let lastGood: PlayoffSnapshot | null = null;
 const TTL_MS = 15_000;
 
-type ScheduleCache = { at: number; matches: RawMatch[] };
+type ScheduleCache = { at: number; historyAt: number; matches: RawMatch[] };
 let scheduleCache: ScheduleCache | null = null;
 let scheduleInflight: Promise<RawMatch[]> | null = null;
-/** Kickoff times barely move, so the full slate is not refetched with the live score. */
+/** Recent kickoffs move; the finished Clausura fechas stay for hours. */
 const SCHEDULE_TTL_MS = 15 * 60 * 1000;
-const SCHEDULE_CONCURRENCY = 4;
+const HISTORY_TTL_MS = 6 * 60 * 60 * 1000;
+const SCHEDULE_CONCURRENCY = 8;
+/** Regular season only. Playoffs start after 9 Nov and must not become a fecha. */
+const CLAUSURA_FROM = "20260701";
+const CLAUSURA_TO = "20261109";
+
+type AperturaCache = { at: number; rows: AperturaTotal[] };
+let aperturaCache: AperturaCache | null = null;
+const APERTURA_TTL_MS = 6 * 60 * 60 * 1000;
 
 function num(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -191,7 +199,7 @@ function fallbackSnapshot(): PlayoffSnapshot {
   return { ...snapshot, agenda: snapshot.matches, calendar: snapshot.matches };
 }
 
-function calendarYmds(payload: unknown, today: string): string[] {
+function calendarYmds(payload: unknown): string[] {
   const leagues = (payload as { leagues?: Array<{ calendar?: unknown }> }).leagues;
   const calendar = leagues?.[0]?.calendar;
   if (!Array.isArray(calendar)) return [];
@@ -199,7 +207,7 @@ function calendarYmds(payload: unknown, today: string): string[] {
   for (const entry of calendar) {
     if (typeof entry !== "string" || entry.length < 10) continue;
     const ymd = entry.slice(0, 10).replaceAll("-", "");
-    if (/^\d{8}$/.test(ymd) && ymd >= shiftYmd(today, -10)) dates.push(ymd);
+    if (/^\d{8}$/.test(ymd) && ymd >= CLAUSURA_FROM && ymd <= CLAUSURA_TO) dates.push(ymd);
   }
   return [...new Set(dates)];
 }
@@ -221,54 +229,94 @@ async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise
 async function scoreboardOn(ymd: string): Promise<RawMatch[]> {
   const urls = SCOREBOARD_URLS.map((base) => `${base}?dates=${ymd}`);
   const json = await fetchFirst(urls);
-  return parseScoreboard(json).matches;
+  const parsed = parseScoreboard(json);
+  if (parsed.tournament.includes("Apertura")) return [];
+  return parsed.matches;
 }
 
-async function refreshSchedule(dates: string[]): Promise<RawMatch[]> {
+function dedupeMatches(matches: RawMatch[]): RawMatch[] {
+  const seen = new Set<string>();
+  const rows: RawMatch[] = [];
+  for (const match of matches) {
+    if (!match.id || seen.has(match.id)) continue;
+    seen.add(match.id);
+    rows.push(match);
+  }
+  return rows;
+}
+
+async function refreshSchedule(dates: string[], today: string): Promise<RawMatch[]> {
   if (dates.length === 0) return scheduleCache?.matches ?? [];
-  const batches = await mapPool(dates, SCHEDULE_CONCURRENCY, async (ymd) => {
+  const cutoff = shiftYmd(today, -2);
+  const historyFresh = Boolean(scheduleCache && Date.now() - scheduleCache.historyAt < HISTORY_TTL_MS);
+  const targets = historyFresh ? dates.filter((ymd) => ymd >= cutoff) : dates;
+  const batches = await mapPool(targets, SCHEDULE_CONCURRENCY, async (ymd) => {
     try {
-      return await scoreboardOn(ymd);
+      return { ymd, ok: true, matches: await scoreboardOn(ymd) };
     } catch {
-      return [] as RawMatch[];
+      return { ymd, ok: false, matches: [] as RawMatch[] };
     }
   });
-  const matches: RawMatch[] = [];
-  const seen = new Set<string>();
+  const fresh: RawMatch[] = [];
+  const replacedDays = new Set<string>();
   for (const batch of batches) {
-    for (const match of batch) {
-      if (!match.id || seen.has(match.id)) continue;
-      seen.add(match.id);
-      matches.push(match);
-    }
+    if (!batch.ok) continue;
+    replacedDays.add(batch.ymd);
+    fresh.push(...batch.matches);
   }
+  const previous = historyFresh ? (scheduleCache?.matches ?? []) : [];
+  const kept = previous.filter((match) => {
+    const day = artDayKey(match.date);
+    return !day || !replacedDays.has(day);
+  });
+  const matches = dedupeMatches([...kept, ...fresh]);
   if (matches.length === 0 && scheduleCache) {
-    scheduleCache = { at: Date.now(), matches: scheduleCache.matches };
+    scheduleCache = { ...scheduleCache, at: Date.now() };
     return scheduleCache.matches;
   }
-  scheduleCache = { at: Date.now(), matches };
+  const historyFailed = batches.some((batch) => !batch.ok && batch.ymd < cutoff);
+  scheduleCache = {
+    at: Date.now(),
+    historyAt: historyFresh ? scheduleCache!.historyAt : historyFailed ? 0 : Date.now(),
+    matches,
+  };
   return matches;
 }
 
-function loadSchedule(dates: string[]): Promise<RawMatch[]> {
+function loadSchedule(dates: string[], today: string): Promise<RawMatch[]> {
   const now = Date.now();
   if (scheduleCache && now - scheduleCache.at < SCHEDULE_TTL_MS) {
     return Promise.resolve(scheduleCache.matches);
   }
-  if (scheduleCache) {
-    if (!scheduleInflight) {
-      scheduleInflight = refreshSchedule(dates).finally(() => {
-        scheduleInflight = null;
-      });
-    }
-    return Promise.resolve(scheduleCache.matches);
-  }
-  if (!scheduleInflight) {
-    scheduleInflight = refreshSchedule(dates).finally(() => {
+  const start = () =>
+    refreshSchedule(dates, today).finally(() => {
       scheduleInflight = null;
     });
+  if (scheduleCache) {
+    if (!scheduleInflight) scheduleInflight = start();
+    return Promise.resolve(scheduleCache.matches);
   }
+  if (!scheduleInflight) scheduleInflight = start();
   return scheduleInflight;
+}
+
+async function loadApertura(): Promise<AperturaTotal[]> {
+  if (aperturaCache && Date.now() - aperturaCache.at < APERTURA_TTL_MS) return aperturaCache.rows;
+  try {
+    const urls = STANDINGS_URLS.map((base) => `${base}?season=2026&seasontype=1`);
+    const parsed = parseStandings(await fetchFirst(urls));
+    const rows = parsed.rows.map((row) => ({
+      id: row.id,
+      pts: row.pts,
+      gf: row.gf,
+      ga: row.ga,
+      played: row.played,
+    }));
+    aperturaCache = { at: Date.now(), rows };
+    return rows;
+  } catch {
+    return aperturaCache?.rows ?? [];
+  }
 }
 
 function overlayFresh(schedule: RawMatch[], fresh: RawMatch[]): RawMatch[] {
@@ -284,12 +332,8 @@ function overlayFresh(schedule: RawMatch[], fresh: RawMatch[]): RawMatch[] {
   return [...byId.values()];
 }
 
-function attachAgenda(
-  snapshot: PlayoffSnapshot,
-  slate: RawMatch[],
-  today: string,
-): PlayoffSnapshot {
-  const calendar = agendaFrom(slate, today);
+function attachAgenda(snapshot: PlayoffSnapshot, slate: RawMatch[]): PlayoffSnapshot {
+  const calendar = agendaFrom(slate);
   const selected = selectFecha(calendar);
   return {
     ...attachRemaining(snapshot, slate),
@@ -306,21 +350,17 @@ function shiftYmd(ymd: string, days: number): string {
   return `${date.getUTCFullYear()}${month}${day}`;
 }
 
-function agendaFrom(matches: RawMatch[], today: string): MatchRow[] {
+function agendaFrom(matches: RawMatch[]): MatchRow[] {
   const rows: MatchRow[] = [];
   const seen = new Set<string>();
   for (const match of matches) {
-    if (!match.id || !match.date || seen.has(match.id)) continue;
+    if (!match.id || !match.date || !match.homeId || !match.awayId || seen.has(match.id)) continue;
     const key = artDayKey(match.date);
-    if (!key || key < shiftYmd(today, -10)) continue;
+    if (!key || key < CLAUSURA_FROM || key > CLAUSURA_TO) continue;
     seen.add(match.id);
-    const row = toMatchRow(match);
-    const round = fixtureRound(match.homeId, match.awayId);
-    if (round != null) row.round = round;
-    rows.push(row);
+    rows.push(toMatchRow(match));
   }
-  rows.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
-  return rows;
+  return assignRounds(rows);
 }
 
 export async function loadSnapshot(): Promise<PlayoffSnapshot> {
@@ -329,10 +369,11 @@ export async function loadSnapshot(): Promise<PlayoffSnapshot> {
 
   try {
     const tomorrow = `${SCOREBOARD_URLS[0]}?dates=${ymdArt(1)}`;
-    const [standingsJson, scoreboardJson, extraJson] = await Promise.all([
+    const [standingsJson, scoreboardJson, extraJson, apertura] = await Promise.all([
       fetchFirst(STANDINGS_URLS),
       fetchFirst(SCOREBOARD_URLS),
       fetchJson(tomorrow).catch(() => null),
+      loadApertura(),
     ]);
     const standings = parseStandings(standingsJson);
     const scoreboard = parseScoreboard(scoreboardJson);
@@ -342,15 +383,16 @@ export async function loadSnapshot(): Promise<PlayoffSnapshot> {
       if (!byId.has(match.id)) scoreboard.matches.push(match);
     }
     const today = ymdArt(0);
-    const scheduled = await loadSchedule(calendarYmds(scoreboardJson, today));
+    const scheduled = await loadSchedule(calendarYmds(scoreboardJson), today);
     const slate = overlayFresh(scheduled, scoreboard.matches);
     const snapshot = buildSnapshot({
       tournament: scoreboard.tournament || standings.tournament,
       rawStandings: standings.rows,
       rawMatches: scoreboard.matches,
       source: "espn",
+      apertura,
     });
-    const withAgenda = attachAgenda(snapshot, slate, today);
+    const withAgenda = attachAgenda(snapshot, slate);
     cache = { at: now, data: withAgenda };
     lastGood = withAgenda;
     return withAgenda;

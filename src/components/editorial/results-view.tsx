@@ -6,6 +6,7 @@ import {
   formatUpdatedStamp,
   matchStatus,
   teamById,
+  withTodayMatches,
 } from "@/lib/playoffs/format";
 import type { MatchRow, PlayoffSnapshot, StandingRow } from "@/lib/playoffs/types";
 
@@ -28,13 +29,25 @@ export function ResultsView({
   );
   const [picked, setPicked] = useState<number | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
-  const round = picked ?? data.agendaRound ?? boards[0]?.round ?? null;
+  const round = boards.some((item) => item.round === picked)
+    ? picked
+    : (data.agendaRound ?? boards[0]?.round ?? null);
   const board = boards.find((item) => item.round === round) ?? null;
+  const known = useMemo(() => new Set(boards.map((item) => item.round)), [boards]);
+  const numbers = useMemo(() => {
+    const max = boards.reduce((peak, item) => Math.max(peak, item.round), 0);
+    if (max === 0) return [];
+    return Array.from({ length: Math.max(16, max) }, (_, index) => index + 1);
+  }, [boards]);
   const index = boards.findIndex((item) => item.round === round);
-  const matches = (board?.matches ?? []).filter((match) => {
-    if (!onlyMine || !focusId) return true;
-    return match.homeId === focusId || match.awayId === focusId;
-  });
+  const matches = useMemo(() => {
+    const current = round != null && round === data.agendaRound;
+    const merged = current
+      ? withTodayMatches(board?.matches ?? [], data.calendar ?? [])
+      : (board?.matches ?? []);
+    if (!onlyMine || !focusId) return merged;
+    return merged.filter((match) => match.homeId === focusId || match.awayId === focusId);
+  }, [board, data.agendaRound, data.calendar, onlyMine, focusId, round]);
   const groups = useMemo(() => agendaGroups(matches), [matches]);
   const followed = focusId ? teamById(data, focusId) : undefined;
   const last = useMemo(() => lastResult(data, focusId), [data, focusId]);
@@ -44,41 +57,66 @@ export function ResultsView({
     <div className="results-layout">
       <div>
         <div className="fecha-bar">
-          <button
-            type="button"
-            className="btn btn-text"
-            onClick={() => {
-              const prev = boards[index - 1];
-              if (prev) setPicked(prev.round);
-            }}
-            disabled={index <= 0}
-          >
-            Fecha anterior
-          </button>
-          <h2>{board ? `Fecha ${board.round}` : "Sin fecha"}</h2>
-          <button
-            type="button"
-            className="btn btn-text"
-            onClick={() => {
-              const following = boards[index + 1];
-              if (following) setPicked(following.round);
-            }}
-            disabled={index < 0 || index >= boards.length - 1}
-          >
-            Fecha siguiente
-          </button>
-          <div className="filter-switch" role="group" aria-label="Filtro de partidos">
-            <button type="button" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>
-              Todos
+          <div className="fecha-pager">
+            <button
+              type="button"
+              className="fecha-arrow"
+              aria-label="Fecha anterior"
+              onClick={() => {
+                const prev = boards[index - 1];
+                if (prev) setPicked(prev.round);
+              }}
+              disabled={index <= 0}
+            >
+              <Arrow dir="prev" />
             </button>
-            <span className="switch-slash" aria-hidden>
-              /
-            </span>
-            <button type="button" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>
-              Mi equipo
+            <h2>{board ? `Fecha ${board.round}` : "Sin fecha"}</h2>
+            <button
+              type="button"
+              className="fecha-arrow"
+              aria-label="Fecha siguiente"
+              onClick={() => {
+                const following = boards[index + 1];
+                if (following) setPicked(following.round);
+              }}
+              disabled={index < 0 || index >= boards.length - 1}
+            >
+              <Arrow dir="next" />
             </button>
           </div>
-          <span className="meta">Hora argentina</span>
+          {numbers.length > 0 ? (
+            <div className="fecha-index" role="group" aria-label="Todas las fechas">
+              {numbers.map((item) => {
+                const available = known.has(item);
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    aria-pressed={item === round}
+                    aria-label={`Fecha ${item}`}
+                    disabled={!available}
+                    onClick={() => setPicked(item)}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+          <div className="fecha-tools">
+            <div className="filter-switch" role="group" aria-label="Filtro de partidos">
+              <button type="button" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>
+                Todos
+              </button>
+              <span className="switch-slash" aria-hidden>
+                /
+              </span>
+              <button type="button" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>
+                Mi equipo
+              </button>
+            </div>
+            <span className="meta">Hora argentina</span>
+          </div>
         </div>
         {stale ? <p className="banner">Último dato disponible.</p> : null}
         {onlyMine && !focusId ? (
@@ -103,6 +141,11 @@ export function ResultsView({
                     match={match}
                     focusId={focusId}
                     onFocus={onFocus}
+                    note={
+                      board && match.round != null && match.round !== board.round
+                        ? `Fecha ${match.round}`
+                        : undefined
+                    }
                   />
                 ))}
               </ul>
@@ -158,11 +201,13 @@ function ScoreRow({
   match,
   focusId,
   onFocus,
+  note,
 }: {
   data: PlayoffSnapshot;
   match: MatchRow;
   focusId: string | null;
   onFocus: (id: string) => void;
+  note?: string;
 }) {
   const home = teamById(data, match.homeId);
   const away = teamById(data, match.awayId);
@@ -173,7 +218,10 @@ function ScoreRow({
       <Side team={home} align="home" focusId={focusId} onFocus={onFocus} />
       <div className="score-box num">{status.score ?? "–"}</div>
       <Side team={away} align="away" focusId={focusId} onFocus={onFocus} />
-      <div className={`score-state${status.live ? " is-live" : ""}`}>{status.label}</div>
+      <div className={`score-state${status.live ? " is-live" : ""}`}>
+        <span>{status.label}</span>
+        {note ? <span className="score-note">{note}</span> : null}
+      </div>
     </li>
   );
 }
@@ -204,11 +252,24 @@ function Side({
         aria-pressed={focusId === team.id}
         onClick={() => onFocus(team.id)}
       >
-        <TeamMark team={team} size={28} />
+        <TeamMark team={team} size={22} />
         <span className="team-name">{team.short}</span>
         {focusId === team.id ? <span className="you-tag">Tu equipo</span> : null}
       </button>
     </div>
+  );
+}
+
+function Arrow({ dir }: { dir: "prev" | "next" }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+      <path
+        d={dir === "prev" ? "M11.5 3.5 L5.5 9 L11.5 14.5" : "M6.5 3.5 L12.5 9 L6.5 14.5"}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+    </svg>
   );
 }
 

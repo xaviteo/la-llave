@@ -56,22 +56,26 @@ export function AppShell({
             <button type="button" className="btn btn-text desk-only" onClick={onRefresh} disabled={fetching}>
               {fetching ? "Actualizando…" : "Actualizar"}
             </button>
-            <ThemeToggle className="desk-only" />
+            <ThemeToggle />
             {share}
           </div>
         </div>
         <div className="rule-double" />
       </header>
       <main id="contenido" className="shell">
+        {live || updated ? (
+          <p className="freshness phone-only">
+            {live ? "En vivo. " : ""}
+            {updated ? `Actualizado ${updated}.` : ""}
+          </p>
+        ) : null}
         {children}
         <div className="colophon">
           <p style={{ margin: 0 }}>Desarrollado por el pirata JJCAB.</p>
           <div className="mobile-meta">
-            {live ? <span className="live-word">En vivo</span> : null}
             <button type="button" className="btn btn-text" onClick={onRefresh} disabled={fetching}>
               {fetching ? "Actualizando…" : "Actualizar"}
             </button>
-            <ThemeToggle />
           </div>
         </div>
         <div className="mobile-pad" />

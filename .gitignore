@@ -16,3 +16,6 @@ artifacts/
 .grok/references/
 .grok/og-pending
 .grok/app-env.json
+
+# Credenciales y pasos de deploy. No subir.
+DEPLOY.local.md

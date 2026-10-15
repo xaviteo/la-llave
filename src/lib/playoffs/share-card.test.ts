@@ -78,7 +78,8 @@ test("the card keeps both llaves and the quarter each pair feeds", () => {
   assert.equal(model.columns[0]?.pairs[0]?.matches[0]?.stadium, "Mario Kempes");
   assert.equal(model.columns[0]?.pairs[0]?.matches[0]?.teams[0]?.chicken, true);
   assert.equal(model.columns[0]?.pairs[0]?.matches[0]?.teams[1]?.chicken, false);
-  assert.match(model.columns[0]?.pairs[0]?.matches[0]?.teams[0]?.detail ?? "", /local · 20 pts/);
+  assert.match(model.columns[0]?.pairs[0]?.matches[0]?.teams[0]?.detail ?? "", /Zona A · 20 pts/);
+  assert.doesNotMatch(model.columns[0]?.pairs[0]?.matches[0]?.teams[0]?.detail ?? "", /local/i);
   assert.equal(model.stamp, "Actualizado 12 oct 18:40");
 });
 

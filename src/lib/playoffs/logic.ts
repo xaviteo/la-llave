@@ -3,6 +3,7 @@ import { teamMeta } from "./teams.ts";
 import type {
   BracketSide,
   KnockoutMatch,
+  AperturaTotal,
   MatchRow,
   MatchState,
   PlayoffSnapshot,
@@ -238,6 +239,7 @@ export function buildSnapshot(input: {
   rawMatches: RawMatch[];
   source: "espn" | "fallback";
   updatedAt?: string;
+  apertura?: AperturaTotal[];
 }): PlayoffSnapshot {
   const official = {
     A: sortOfficial(
@@ -263,6 +265,7 @@ export function buildSnapshot(input: {
     source: input.source,
     live: projected.matches.some((match) => match.state === "in"),
     projected: useProjected,
+    apertura: input.apertura ?? [],
     zones,
     matches: projected.matches.sort((a, b) => a.date.localeCompare(b.date)),
     agenda: [],

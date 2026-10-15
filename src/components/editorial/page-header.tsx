@@ -4,7 +4,7 @@ import type { Vista } from "@/components/editorial/shell";
 const COPY: Record<Vista, { title: string; rest: string | null }> = {
   cruces: { title: "Todo por la copa.", rest: "el camino a la final." },
   resultados: { title: "La fecha, al día.", rest: "resultados y próximos partidos." },
-  tablas: { title: "Los que van por la copa.", rest: "posiciones por zona." },
+  tablas: { title: "Los que van por la copa.", rest: "zonas del Clausura y tabla anual." },
   simular: { title: "Jugá con el destino.", rest: null },
 };
 

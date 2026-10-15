@@ -52,7 +52,7 @@ export const Route = createRootRoute({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              '(function(){try{var t=localStorage.getItem("lallave-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;var m=document.querySelector("meta[name=\\"theme-color\\"]");if(!m){m=document.createElement("meta");m.name="theme-color";document.head.appendChild(m);}m.setAttribute("content",t==="light"?"#B2CFD6":"#101719");}catch(e){}})();',
+              '(function(){try{var t=localStorage.getItem("lallave-theme");if(t!=="light"&&t!=="dark")t="light";document.documentElement.dataset.theme=t;var m=document.querySelector("meta[name=\\"theme-color\\"]");if(!m){m=document.createElement("meta");m.name="theme-color";document.head.appendChild(m);}m.setAttribute("content",t==="light"?"#B2CFD6":"#101719");}catch(e){document.documentElement.dataset.theme="light";}})();',
           }}
         />
         <HeadContent />

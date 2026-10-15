@@ -63,6 +63,15 @@ export type KnockoutMatch = {
   note: string;
 };
 
+/** Regular-season totals from the finished Apertura. Playoffs are not included. */
+export type AperturaTotal = {
+  id: string;
+  pts: number;
+  gf: number;
+  ga: number;
+  played: number;
+};
+
 export type PlayoffSnapshot = {
   tournament: string;
   roundLabel: string;
@@ -70,6 +79,8 @@ export type PlayoffSnapshot = {
   source: "espn" | "fallback";
   live: boolean;
   projected: boolean;
+  /** Empty when the Apertura table could not be loaded. */
+  apertura: AperturaTotal[];
   zones: { A: StandingRow[]; B: StandingRow[] };
   matches: MatchRow[];
   /** Matches of the fecha currently on the board. */

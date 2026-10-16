@@ -2,7 +2,7 @@ import { GALLINA_SVG, isTalleresCrest } from "./gallina.ts";
 import type { BracketSide, KnockoutMatch, PlayoffSnapshot } from "./types";
 
 const W = 1920;
-const H = 1080;
+const H = 900;
 const FILE_NAME = "mata-mata-llave.png";
 
 const COLUMNS = [
@@ -218,10 +218,7 @@ function drawSideTeam(
   ctx.fillStyle = INK.fg;
   ctx.font = "700 30px Archivo, Arial, sans-serif";
   const textX = align === "left" ? nameX : x + nameW;
-  ctx.fillText(fit(ctx, team.name, nameW), textX, y + h / 2 - 12);
-  ctx.fillStyle = INK.faint;
-  ctx.font = "500 16px Archivo, Arial, sans-serif";
-  ctx.fillText(fit(ctx, team.detail, nameW), textX, y + h / 2 + 16);
+  ctx.fillText(fit(ctx, team.name, nameW), textX, y + h / 2);
   drawPlainCrest(
     ctx,
     image,
@@ -274,7 +271,7 @@ function drawDefined(
   ctx.textBaseline = "middle";
   ctx.fillStyle = INK.faint;
   ctx.font = "600 16px Archivo, Arial, sans-serif";
-  ctx.fillText(title, box.x + box.w / 2, box.y + 28);
+  ctx.fillText(title.startsWith("C") ? "Cuartos" : title.startsWith("S") ? "Semis" : title, box.x + box.w / 2, box.y + 28);
   ctx.fillStyle = INK.fg;
   ctx.font = "700 26px Archivo, Arial, sans-serif";
   ctx.fillText(fit(ctx, "A definir", box.w - 16), box.x + box.w / 2, box.y + box.h / 2 + 8);
@@ -347,35 +344,15 @@ export async function renderLlavePng(
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  // Real transparent corners survive PNG export; the inset board stays legible in chats.
+  // One uninterrupted board, with transparent outer corners.
   ctx.beginPath();
   ctx.roundRect(0, 0, W, H, 48);
   ctx.clip();
-  ctx.fillStyle = INK.fg;
+  ctx.fillStyle = INK.bg;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = INK.bg;
-  ctx.beginPath();
-  ctx.roundRect(32, 196, W - 64, 756, 28);
-  ctx.fill();
-
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-  ctx.fillStyle = INK.bg;
-  ctx.font = '800 110px "Source Serif 4", Georgia, serif';
-  ctx.fillText("pirata.app", 64, 88);
-  ctx.fillStyle = INK.cream;
-  ctx.font = "500 24px Archivo, Arial, sans-serif";
-  ctx.fillText(fit(ctx, data.tournament, 840), 68, 156);
-  ctx.textAlign = "right";
-  ctx.font = "900 52px Archivo, Arial, sans-serif";
-  ctx.fillText("TODO POR LA COPA.", W - 64, 86);
-  ctx.fillStyle = INK.bg;
-  ctx.font = "500 24px Archivo, Arial, sans-serif";
-  ctx.fillText(`${options.predicted ? "TU SIMULACIÓN" : "LOS CRUCES, HOY"}  /  OCTAVOS → FINAL`, W - 64, 151);
-
-  const top = 232;
-  const rowH = 160;
-  const gap = 16;
+  const top = 48;
+  const rowH = 180;
+  const gap = 28;
   const octW = 400;
   const laterW = 160;
   const xL = 64;
@@ -446,22 +423,23 @@ export async function renderLlavePng(
   drawDefined(ctx, "S2", semiR);
   drawDefined(ctx, "Final", finalBox);
   if (cup) {
-    const height = Math.min(128, Math.max(64, finalBox.y - top - 16));
+    const height = 190;
     const width = (cup.width / cup.height) * height;
-    ctx.drawImage(cup, finalBox.x + (finalBox.w - width) / 2, finalBox.y - height - 8, width, height);
+    const cupY = finalBox.y - height - 20;
+    ctx.save();
+    ctx.fillStyle = INK.fg;
+    ctx.beginPath();
+    ctx.roundRect(finalBox.x + (finalBox.w - width) / 2 - 18, cupY - 14, width + 36, height + 28, 28);
+    ctx.fill();
+    ctx.drawImage(cup, finalBox.x + (finalBox.w - width) / 2, cupY, width, height);
+    ctx.restore();
   }
 
-  ctx.textAlign = "left";
+  ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = INK.cream;
-  ctx.font = "700 28px Archivo, Arial, sans-serif";
-  ctx.fillText("MATA MATA  /  EL CAMINO A LA FINAL", 64, 995);
-  ctx.fillStyle = INK.bg;
-  ctx.font = "500 21px Archivo, Arial, sans-serif";
-  ctx.fillText(model.disclaimer || "Ocho de cada zona. Una copa. Todo por jugar.", 64, 1035);
-  ctx.textAlign = "right";
-  ctx.fillText(model.stamp || data.roundLabel, W - 64, 995);
-  ctx.fillText("Armá tu escenario en pirata.app", W - 64, 1035);
+  ctx.fillStyle = INK.fg;
+  ctx.font = '800 110px "Source Serif 4", Georgia, serif';
+  ctx.fillText("pirata.app", W / 2, 684);
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) throw new Error("No se pudo armar la imagen");

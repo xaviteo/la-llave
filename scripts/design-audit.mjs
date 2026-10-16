@@ -10,11 +10,12 @@ await page.waitForTimeout(1000);
 await page.screenshot({ path: `${dir}/01-mobile-cruces.png`, fullPage: true });
 console.log(await page.locator('body').innerText());
 console.log(await page.locator('button').evaluateAll(els => els.map(e => ({text:e.textContent,label:e.getAttribute('aria-label')}))));
-await writeFile(`${dir}/initial.html`, await page.content());
+await writeFile(`${dir}/initial.txt`, await page.content());
 for (const theme of ['light', 'dark']) {
   if (theme === 'dark') await page.getByRole('button', {name:'Activar tema oscuro'}).click();
   for (const vista of ['cruces', 'resultados', 'tablas', 'simular']) {
     await page.locator('.mobile-nav').getByRole('link', {name: {cruces:'Cruces',resultados:'Resultados',tablas:'Tablas',simular:'Simular'}[vista],exact:true}).click();
+    await page.waitForTimeout(350);
     await page.screenshot({path:`${dir}/mobile-${vista}-${theme}.png`,fullPage:true});
     console.log(vista, theme, (await page.locator('main').innerText()).slice(0,1400));
     if (vista === 'tablas') {

@@ -53,7 +53,8 @@ function linkPath(from: Anchor[], to: Anchor, direction: "ltr" | "rtl"): string 
   if (!second) {
     const x1 = direction === "ltr" ? first.right : first.left;
     const x2 = direction === "ltr" ? to.left : to.right;
-    return `M ${x1} ${first.cy} H ${x2}`;
+    const mid = (x1 + x2) / 2;
+    return `M ${x1} ${first.cy} H ${mid} V ${to.cy} H ${x2}`;
   }
   const x1 = direction === "ltr" ? first.right : first.left;
   const x2 = direction === "ltr" ? to.left : to.right;

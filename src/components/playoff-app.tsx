@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BracketView } from "@/components/editorial/bracket-view";
 import { EditorialPageHeader, ScenarioSwitch } from "@/components/editorial/page-header";
 import { ResultsView } from "@/components/editorial/results-view";
@@ -23,14 +23,6 @@ export function PlayoffApp({
   onVista: (vista: Vista) => void;
 }) {
   const [presentation, setPresentation] = useState<"llave" | "lista" | null>(null);
-  const [compact, setCompact] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 767px)");
-    const sync = () => setCompact(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [source, setSource] = useState<"now" | "prediction">("now");
   const { predictions, setScore, clear, undo, canUndo, filled } = usePredictions();
@@ -51,7 +43,7 @@ export function PlayoffApp({
     () => (showingPrediction ? changedMatchIds(live.octavos, predicted.octavos) : new Set<string>()),
     [showingPrediction, live.octavos, predicted.octavos],
   );
-  const bracketMode = presentation ?? (compact ? "lista" : "llave");
+  const bracketMode = presentation ?? "llave";
   const scenarioSwitch = (
     <ScenarioSwitch value={source} filled={filled} onChange={setSource} />
   );

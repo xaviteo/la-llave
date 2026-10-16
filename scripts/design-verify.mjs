@@ -11,6 +11,12 @@ for (const width of [320, 360, 390, 768, 1024, 1440]) {
   const page = await browser.newPage({viewport:{width,height:900}});
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(base,{waitUntil:'networkidle'});
+  assert.equal(await page.locator('.bracket-scroll').isVisible(), true, 'initial view must be the bracket');
+  assert.equal(await page.locator('.colophon').innerText(), 'Creado por JJCAB');
+  assert.notEqual(await page.locator('.share-llave').evaluate(el=>getComputedStyle(el,'::after').animationName), 'none');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await page.locator('.share-llave').evaluate(el=>getComputedStyle(el,'::after').animationName), 'none');
+  await page.emulateMedia({reducedMotion:'no-preference'});
   for (const theme of ['light','dark']) {
     if (theme === 'dark') await page.getByRole('button',{name:'Activar tema oscuro'}).click();
     for (const vista of ['cruces','resultados','tablas','simular']) {
@@ -40,7 +46,7 @@ for (const width of [320, 360, 390, 768, 1024, 1440]) {
         const inputs=page.locator('input.score-input');
         await inputs.nth(0).fill('2');
         await inputs.nth(1).fill('1');
-        assert.match(await page.locator('main').innerText(), /1 de 15 completados/);
+        assert.ok((await page.locator('main').innerText()).includes(`1 de ${await inputs.count()/2} completados`));
         await inputs.nth(0).fill('');
         await inputs.nth(1).fill('');
       }

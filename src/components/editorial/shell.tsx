@@ -71,12 +71,7 @@ export function AppShell({
         ) : null}
         {children}
         <div className="colophon">
-          <p style={{ margin: 0 }}>Desarrollado por el pirata JJCAB.</p>
-          <div className="mobile-meta">
-            <button type="button" className="btn btn-text" onClick={onRefresh} disabled={fetching}>
-              {fetching ? "Actualizando…" : "Actualizar"}
-            </button>
-          </div>
+          <p style={{ margin: 0 }}>Creado por JJCAB</p>
         </div>
         <div className="mobile-pad" />
       </main>

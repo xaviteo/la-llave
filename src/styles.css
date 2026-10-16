@@ -803,8 +803,13 @@
 .cup {
   display: block;
   width: auto;
-  height: 76px;
-  max-width: 72px;
+  height: 132px;
+  max-width: 112px;
+  padding: 10px 14px;
+  box-sizing: content-box;
+  border-radius: 18px;
+  background: #101719;
+  filter: drop-shadow(0 4px 6px rgb(16 23 25 / .16));
   object-fit: contain;
   pointer-events: none;
 }
@@ -2000,4 +2005,49 @@ html { scroll-padding-top: 90px; scroll-padding-bottom: 90px; }
 }
 @media (min-width: 768px) {
   .share-label-short { display: none; }
+}
+
+.share-llave { position: relative; overflow: hidden; isolation: isolate; }
+.share-llave::after {
+  content: ''; position: absolute; inset: -50% -30%; pointer-events: none;
+  background: linear-gradient(110deg, transparent 40%, rgb(255 255 255 / .24) 50%, transparent 60%);
+  transform: translateX(-100%);
+}
+.btn, .theme-switch, .primary-nav a, .mobile-nav a, .zone-tabs button,
+.team-button, .fecha-arrow, .fecha-index button {
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.btn:active, .fecha-arrow:active, .zone-tabs button:active { transform: scale(.97); }
+@media (hover: hover) {
+  .share-llave:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgb(16 23 25 / .2); }
+  .team-button:hover { background: var(--color-paper-blue-hover); border-radius: 6px; }
+  .primary-nav a:hover { color: var(--color-title); transform: translateY(-1px); }
+}
+@media (max-width: 1199px) {
+  .zone-switch {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%; gap: 5px; padding: 5px;
+    border: 1px solid var(--color-rule-soft); border-radius: 13px;
+    background: var(--color-paper-blue-light);
+  }
+  .zone-switch button {
+    min-height: 46px; padding: 8px; border-radius: 9px;
+    font-family: var(--font-ui); font-size: 15px; font-weight: 700;
+    color: var(--color-ink-secondary);
+  }
+  .zone-switch button[aria-pressed='true'] {
+    background: var(--color-action-bg); color: var(--color-action-text);
+    box-shadow: 0 2px 5px rgb(16 23 25 / .12);
+  }
+}
+@keyframes share-sheen { 0%, 65% { transform: translateX(-100%); } 88%, 100% { transform: translateX(100%); } }
+@keyframes share-arrive { from { transform: scale(.94); } to { transform: scale(1); } }
+@keyframes content-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: no-preference) {
+  .share-llave { animation: share-arrive 350ms ease-out; }
+  .share-llave:not(:disabled)::after { animation: share-sheen 6s ease-in-out infinite; }
+  .page-hero, .results-layout, .standings-layout, .sim-layout, .round-list { animation: content-enter 280ms ease-out; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

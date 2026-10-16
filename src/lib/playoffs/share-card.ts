@@ -2,7 +2,7 @@ import { GALLINA_SVG, isTalleresCrest } from "./gallina.ts";
 import type { BracketSide, KnockoutMatch, PlayoffSnapshot } from "./types";
 
 const W = 1920;
-const H = 900;
+const H = 1080;
 const FILE_NAME = "mata-mata-llave.png";
 
 const COLUMNS = [
@@ -329,7 +329,7 @@ export async function renderLlavePng(
   await document.fonts.load("700 30px Archivo");
   await document.fonts.load("700 28px Archivo");
   await document.fonts.load("500 16px Archivo");
-  await document.fonts.load('800 110px "Source Serif 4"');
+  await document.fonts.load("900 44px Archivo");
   await document.fonts.ready;
 
   const chicken = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(GALLINA_SVG)}`);
@@ -346,12 +346,12 @@ export async function renderLlavePng(
 
   // One uninterrupted board, with transparent outer corners.
   ctx.beginPath();
-  ctx.roundRect(0, 0, W, H, 48);
+  ctx.roundRect(16, 16, W - 32, H - 32, 40);
   ctx.clip();
   ctx.fillStyle = INK.bg;
   ctx.fillRect(0, 0, W, H);
-  const top = 48;
-  const rowH = 180;
+  const top = 64;
+  const rowH = 210;
   const gap = 28;
   const octW = 400;
   const laterW = 160;
@@ -438,8 +438,8 @@ export async function renderLlavePng(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = INK.fg;
-  ctx.font = '800 110px "Source Serif 4", Georgia, serif';
-  ctx.fillText("pirata.app", W / 2, 684);
+  ctx.font = "900 44px Archivo, Arial, sans-serif";
+  ctx.fillText("PIRATA.APP", W / 2, 1008);
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) throw new Error("No se pudo armar la imagen");
